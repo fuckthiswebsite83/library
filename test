@@ -51,8 +51,8 @@ function Box:Update(character)
     local legPos, legOnScreen = workspace.CurrentCamera:WorldToViewportPoint(rootPart.Position - Vector3.new(0, 3, 0))
 
     if headOnScreen and rootOnScreen and legOnScreen then
-        local boxHeight = 150
-        local boxWidth = 75
+        local boxHeight = headPos.Y - legPos.Y
+        local boxWidth = boxHeight / 2
 
         self.box.Size = Vector2.new(boxWidth, boxHeight)
         self.box.Position = Vector2.new(rootPos.X - boxWidth / 2, headPos.Y - boxHeight / 2)
