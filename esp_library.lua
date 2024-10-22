@@ -388,8 +388,7 @@ function PartESPObject.new(instance, options)
         textColor = options.textColor or {Color3New(1,1,1), 1},
         textOutline = options.textOutline ~= false,
         textOutlineColor = options.textOutlineColor or Color3New(),
-        textSize = options.textSize or 13,
-        textFont = options.textFont or 2
+        textSize = options.textSize or 13
     }
     
     self.nameDrawable = DrawingNew("Text")
@@ -408,7 +407,6 @@ function PartESPObject:UpdateDrawables()
     self.nameDrawable.Color = self.options.textColor[1]
     self.nameDrawable.Transparency = self.options.textColor[2]
     self.nameDrawable.Size = self.options.textSize
-    self.nameDrawable.Font = self.options.textFont
     self.nameDrawable.Center = true
     self.nameDrawable.Outline = self.options.textOutline
     self.nameDrawable.OutlineColor = self.options.textOutlineColor
@@ -417,7 +415,6 @@ function PartESPObject:UpdateDrawables()
     self.distanceDrawable.Color = self.options.textColor[1]
     self.distanceDrawable.Transparency = self.options.textColor[2]
     self.distanceDrawable.Size = self.options.textSize
-    self.distanceDrawable.Font = self.options.textFont
     self.distanceDrawable.Center = true
     self.distanceDrawable.Outline = self.options.textOutline
     self.distanceDrawable.OutlineColor = self.options.textOutlineColor
