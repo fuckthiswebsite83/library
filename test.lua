@@ -8,7 +8,11 @@ local ESPComponent = {}
 ESPComponent.__index = ESPComponent
 
 function ESPComponent:SetVisible(visible)
-    self.drawable.Visible = visible
+    if self.drawable:IsA("Highlight") then
+        self.drawable.Enabled = visible
+    else
+        self.drawable.Visible = visible
+    end
 end
 
 function ESPComponent:Destroy()
@@ -37,7 +41,7 @@ function Box:Update(character, bounds, config)
     
     self.drawable.Size = Vector2.new(bounds.maxX - bounds.minX, bounds.maxY - bounds.minY)
     self.drawable.Position = Vector2.new(bounds.minX, bounds.minY)
-    self.drawable.Visible = true
+    self:SetVisible(true)
 end
 
 local HealthBar = setmetatable({}, ESPComponent)
@@ -70,7 +74,7 @@ function HealthBar:Update(character, bounds, config)
     local boxHeight = bounds.maxY - bounds.minY
     self.drawable.Size = Vector2.new(5, boxHeight * healthPercent)
     self.drawable.Position = Vector2.new(bounds.minX - 10, bounds.minY + boxHeight * (1 - healthPercent))
-    self.drawable.Visible = true
+    self:SetVisible(true)
 end
 
 local NameTag = setmetatable({}, ESPComponent)
@@ -102,7 +106,7 @@ function NameTag:Update(character, bounds, config)
     
     self.drawable.Text = player.Name
     self.drawable.Position = Vector2.new(bounds.minX + ((bounds.maxX - bounds.minX) / 2), bounds.minY - 20)
-    self.drawable.Visible = true
+    self:SetVisible(true)
 end
 
 local Distance = setmetatable({}, ESPComponent)
@@ -141,7 +145,7 @@ function Distance:Update(character, bounds, config)
     local distance = (camera.CFrame.Position - rootPart.Position).Magnitude
     self.drawable.Text = string.format("[%d studs]", math.floor(distance))
     self.drawable.Position = Vector2.new(bounds.minX + ((bounds.maxX - bounds.minX) / 2), bounds.maxY + 5)
-    self.drawable.Visible = true
+    self:SetVisible(true)
 end
 
 local Cham = setmetatable({}, ESPComponent)
@@ -166,7 +170,7 @@ function Cham:Update(character, bounds, config)
     end
     
     self.drawable.Adornee = character
-    self.drawable.Enabled = true
+    self:SetVisible(true)
 end
 
 local ESPObject = {}
