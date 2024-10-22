@@ -295,24 +295,21 @@ end
 function ESPObject:CalculateBounds(character)
     local hrp = character:FindFirstChild("HumanoidRootPart")
     if not hrp then return nil end
-    
-    -- Get character dimensions using GetExtentsSize
+
     local size = character:GetExtentsSize()
     local cf = character:GetPivot()
     
-    -- Calculate the corners of the character model
     local corners = {
-        cf * Vector3New(size.X/2, size.Y/2, size.X/2),    -- Top Front Right
-        cf * Vector3New(-size.X/2, size.Y/2, size.X/2),   -- Top Front Left
-        cf * Vector3New(-size.X/2, -size.Y/2, size.X/2),  -- Bottom Front Left
-        cf * Vector3New(size.X/2, -size.Y/2, size.X/2),   -- Bottom Front Right
-        cf * Vector3New(size.X/2, size.Y/2, -size.X/2),   -- Top Back Right
-        cf * Vector3New(-size.X/2, size.Y/2, -size.X/2),  -- Top Back Left
-        cf * Vector3New(-size.X/2, -size.Y/2, -size.X/2), -- Bottom Back Left
-        cf * Vector3New(size.X/2, -size.Y/2, -size.X/2),  -- Bottom Back Right
+        cf * Vector3New(size.X/2, size.Y/2, size.X/2),
+        cf * Vector3New(-size.X/2, size.Y/2, size.X/2),
+        cf * Vector3New(-size.X/2, -size.Y/2, size.X/2),
+        cf * Vector3New(size.X/2, -size.Y/2, size.X/2),
+        cf * Vector3New(size.X/2, size.Y/2, -size.X/2),
+        cf * Vector3New(-size.X/2, size.Y/2, -size.X/2),
+        cf * Vector3New(-size.X/2, -size.Y/2, -size.X/2),
+        cf * Vector3New(size.X/2, -size.Y/2, -size.X/2),
     }
-    
-    -- Convert all corners to screen points
+
     local minX, minY = math.huge, math.huge
     local maxX, maxY = -math.huge, -math.huge
     local onScreen = false
@@ -329,8 +326,7 @@ function ESPObject:CalculateBounds(character)
     end
     
     if not onScreen then return nil end
-    
-    -- Ensure minimum size for visibility at extreme distances
+
     local minSize = 8
     local width = maxX - minX
     local height = maxY - minY
