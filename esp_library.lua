@@ -133,7 +133,19 @@ function HealthBar:Update(character, bounds, config)
         return
     end
     
-    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    local humanoid
+    if game.PlaceId == 863266079 then
+        local player = Players:GetPlayerFromCharacter(character)
+        if player and player:FindFirstChild("Stats") and player.Stats:FindFirstChild("Health") then
+            humanoid = {
+                Health = player.Stats.Health.Value,
+                MaxHealth = 100
+            }
+        end
+    else
+        humanoid = character:FindFirstChildOfClass("Humanoid")
+    end
+
     if not humanoid then
         self:SetVisible(false)
         self.outline.Visible = false
@@ -281,34 +293,60 @@ function ESPObject:Update(character, config)
 end
 
 function ESPObject:CalculateBounds(character)
-    local rootPart = character:FindFirstChild("HumanoidRootPart")
-    if not rootPart then return nil end
+    local hrp = character:FindFirstChild("HumanoidRootPart")
+    if not hrp then return nil end
     
-    local _, onScreen = Camera:WorldToViewportPoint(rootPart.Position)
-    if not onScreen then return nil end
+    -- Get character dimensions using GetExtentsSize
+    local size = character:GetExtentsSize()
+    local cf = character:GetPivot()
     
-    local cornerPoints = {
-        rootPart.Position + Vector3New(2, 3, 2),
-        rootPart.Position + Vector3New(-2, 3, 2),
-        rootPart.Position + Vector3New(-2, -3, 2),
-        rootPart.Position + Vector3New(2, -3, 2),
-        rootPart.Position + Vector3New(2, 3, -2),
-        rootPart.Position + Vector3New(-2, 3, -2),
-        rootPart.Position + Vector3New(-2, -3, -2),
-        rootPart.Position + Vector3New(2, -3, -2),
+    -- Calculate the corners of the character model
+    local corners = {
+        cf * Vector3New(size.X/2, size.Y/2, size.X/2),    -- Top Front Right
+        cf * Vector3New(-size.X/2, size.Y/2, size.X/2),   -- Top Front Left
+        cf * Vector3New(-size.X/2, -size.Y/2, size.X/2),  -- Bottom Front Left
+        cf * Vector3New(size.X/2, -size.Y/2, size.X/2),   -- Bottom Front Right
+        cf * Vector3New(size.X/2, size.Y/2, -size.X/2),   -- Top Back Right
+        cf * Vector3New(-size.X/2, size.Y/2, -size.X/2),  -- Top Back Left
+        cf * Vector3New(-size.X/2, -size.Y/2, -size.X/2), -- Bottom Back Left
+        cf * Vector3New(size.X/2, -size.Y/2, -size.X/2),  -- Bottom Back Right
     }
     
+    -- Convert all corners to screen points
     local minX, minY = math.huge, math.huge
     local maxX, maxY = -math.huge, -math.huge
+    local onScreen = false
     
-    for _, point in ipairs(cornerPoints) do
-        local screenPoint = Camera:WorldToViewportPoint(point)
-        minX = math.min(minX, screenPoint.X)
-        minY = math.min(minY, screenPoint.Y)
-        maxX = math.max(maxX, screenPoint.X)
-        maxY = math.max(maxY, screenPoint.Y)
+    for _, corner in ipairs(corners) do
+        local screenPoint, visible = Camera:WorldToViewportPoint(corner)
+        if visible then
+            onScreen = true
+            minX = math.min(minX, screenPoint.X)
+            minY = math.min(minY, screenPoint.Y)
+            maxX = math.max(maxX, screenPoint.X)
+            maxY = math.max(maxY, screenPoint.Y)
+        end
     end
-
+    
+    if not onScreen then return nil end
+    
+    -- Ensure minimum size for visibility at extreme distances
+    local minSize = 8
+    local width = maxX - minX
+    local height = maxY - minY
+    
+    if width < minSize then
+        local center = (minX + maxX) / 2
+        minX = center - minSize / 2
+        maxX = center + minSize / 2
+    end
+    
+    if height < minSize then
+        local center = (minY + maxY) / 2
+        minY = center - minSize / 2
+        maxY = center + minSize / 2
+    end
+    
     return {
         minX = minX,
         minY = minY,
