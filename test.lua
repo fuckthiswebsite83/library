@@ -125,8 +125,8 @@ function Distance.new(distanceColor, distanceSize, distanceCenter, distanceOutli
     return self
 end
 
-function Distance:Update(character, bounds)
-    if not (bounds and character) then
+function Distance:Update(character, bounds, distanceEnabled)
+    if not (bounds and character) or not distanceEnabled then
         self:SetVisible(false)
         return
     end
@@ -162,7 +162,7 @@ function ESPObject.new(boxColor, boxThickness, boxTransparency, boxFilled, healt
     return self
 end
 
-function ESPObject:Update(character)
+function ESPObject:Update(character, distanceEnabled)
     if not character then
         self:SetVisible(false)
         return
@@ -177,7 +177,7 @@ function ESPObject:Update(character)
     self.box:Update(character, bounds)
     self.healthBar:Update(character, bounds)
     self.nameTag:Update(character, bounds)
-    self.distance:Update(character, bounds)
+    self.distance:Update(character, bounds, distanceEnabled)
 end
 
 function ESPObject:CalculateBounds(character)
