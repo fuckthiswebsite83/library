@@ -371,4 +371,90 @@ end
 
 ESP.Object = ESPObject
 
+-- PartESP Integration
+local PartESP = {}
+PartESP.__index = PartESP
+
+local PartESPObject = {}
+PartESPObject.__index = PartESPObject
+
+function PartESPObject.new(instance, options)
+    local self = setmetatable({}, PartESPObject)
+    
+    self.instance = instance
+    self.options = {
+        enabled = options.enabled ~= false,
+        text = options.text or "{name}",
+        textColor = options.textColor or {Color3New(1,1,1), 1},
+        textOutline = options.textOutline ~= false,
+        textOutlineColor = options.textOutlineColor or Color3New(),
+        textSize = options.textSize or 13,
+        textFont = options.textFont or 2
+    }
+    
+    self.drawable = DrawingNew("Text")
+    self:UpdateDrawable()
+    
+    self.connection = RunService.RenderStepped:Connect(function()
+        self:Update()
+    end)
+    
+    return self
+end
+
+function PartESPObject:UpdateDrawable()
+    self.drawable.Visible = false
+    self.drawable.Color = self.options.textColor[1]
+    self.drawable.Transparency = self.options.textColor[2]
+    self.drawable.Size = self.options.textSize
+    self.drawable.Font = self.options.textFont
+    self.drawable.Center = true
+    self.drawable.Outline = self.options.textOutline
+    self.drawable.OutlineColor = self.options.textOutlineColor
+end
+
+function PartESPObject:FormatText()
+    local text = self.options.text
+    local distance = (Camera.CFrame.Position - self.instance.Position).Magnitude
+    
+    text = text:gsub("{name}", self.instance.Name)
+    text = text:gsub("{distance}", tostring(MathFloor(distance)))
+    text = text:gsub("{position}", tostring(self.instance.Position))
+    
+    return text
+end
+
+function PartESPObject:Update()
+    if not self.options.enabled then
+        self.drawable.Visible = false
+        return
+    end
+    
+    if not self.instance or not self.instance.Parent then
+        self:Destroy()
+        return
+    end
+    
+    local position, visible = Camera:WorldToViewportPoint(self.instance.Position)
+    if not visible then
+        self.drawable.Visible = false
+        return
+    end
+    
+    self.drawable.Text = self:FormatText()
+    self.drawable.Position = Vector2New(position.X, position.Y)
+    self.drawable.Visible = true
+end
+
+function PartESPObject:Destroy()
+    self.connection:Disconnect()
+    self.drawable:Remove()
+end
+
+function PartESP.AddInstance(instance, options)
+    return PartESPObject.new(instance, options or {})
+end
+
+ESP.PartESP = PartESP
+
 return ESP
