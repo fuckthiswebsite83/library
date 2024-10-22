@@ -381,20 +381,23 @@ PartESPObject.__index = PartESPObject
 function PartESPObject.new(instance, options)
     local self = setmetatable({}, PartESPObject)
     
+    -- Generalize the instance and options setup
     self.instance = instance
     self.options = {
         enabled = options.enabled ~= false,
         text = options.text or "{name}",
-        textColor = options.textColor or {Color3New(1,1,1), 1},
+        textColor = options.textColor or {Color3.new(1, 1, 1), 1},
         textOutline = options.textOutline ~= false,
-        textOutlineColor = options.textOutlineColor or Color3New(),
+        textOutlineColor = options.textOutlineColor or Color3.new(),
         textSize = options.textSize or 13
     }
     
-    self.nameDrawable = DrawingNew("Text")
-    self.distanceDrawable = DrawingNew("Text")
+    -- Initialize drawing objects
+    self.nameDrawable = Drawing.new("Text")
+    self.distanceDrawable = Drawing.new("Text")
     self:UpdateDrawables()
     
+    -- Update the drawing based on the part's position each frame
     self.connection = RunService.RenderStepped:Connect(function()
         self:Update()
     end)
@@ -403,6 +406,7 @@ function PartESPObject.new(instance, options)
 end
 
 function PartESPObject:UpdateDrawables()
+    -- Update the appearance based on the options
     self.nameDrawable.Visible = false
     self.nameDrawable.Color = self.options.textColor[1]
     self.nameDrawable.Transparency = self.options.textColor[2]
@@ -426,12 +430,14 @@ function PartESPObject:Update()
         return
     end
     
+    -- Check if the part is on the screen and update its position
     local screenPoint, onScreen = Camera:WorldToViewportPoint(self.instance.Position)
     if not onScreen then
         self:SetVisible(false)
         return
     end
     
+    -- Update name and distance displays
     self.nameDrawable.Text = self.options.text:gsub("{name}", self.instance.Name)
     self.nameDrawable.Position = Vector2New(screenPoint.X, screenPoint.Y - 20)
     self.nameDrawable.Visible = true
@@ -455,8 +461,7 @@ function PartESPObject:Destroy()
     end
 end
 
-PartESP.Object = PartESPObject
-
+-- PartESP module methods to handle multiple ESP instances
 function PartESP:Add(instance, options)
     local espObject = PartESPObject.new(instance, options)
     table.insert(self.objects, espObject)
