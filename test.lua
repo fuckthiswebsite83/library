@@ -8,7 +8,7 @@ local ESPComponent = {}
 ESPComponent.__index = ESPComponent
 
 function ESPComponent:SetVisible(visible)
-    if self.drawable:IsA("Highlight") then
+    if typeof(self.drawable) == "Instance" and self.drawable:IsA("Highlight") then
         self.drawable.Enabled = visible
     else
         self.drawable.Visible = visible
@@ -16,7 +16,11 @@ function ESPComponent:SetVisible(visible)
 end
 
 function ESPComponent:Destroy()
-    self.drawable:Remove()
+    if typeof(self.drawable) == "Instance" then
+        self.drawable:Destroy()
+    else
+        self.drawable:Remove()
+    end
 end
 
 local Box = setmetatable({}, ESPComponent)
