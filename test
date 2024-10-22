@@ -1,0 +1,74 @@
+local ESP = {}
+ESP.__index = ESP
+
+local RunService = game:GetService("RunService")
+
+local Box = {}
+Box.__index = Box
+
+function Box.new()
+    local self = setmetatable({}, Box)
+    self.box = Drawing.new("Square")
+    self.box.Visible = false
+    self.box.Color = Color3.new(1, 0, 0)
+    self.box.Thickness = 2
+    self.box.Transparency = 1
+
+    self.healthBar = Drawing.new("Square")
+    self.healthBar.Visible = false
+    self.healthBar.Color = Color3.new(0, 1, 0)
+    self.healthBar.Thickness = 1
+    self.healthBar.Transparency = 1
+    self.healthBar.Filled = true
+
+    return self
+end
+
+function Box:Update(character)
+    local head = character:FindFirstChild("Head")
+    if not head then
+        self.box.Visible = false
+        self.healthBar.Visible = false
+        return
+    end
+
+    local rootPart = character:FindFirstChild("HumanoidRootPart")
+    if not rootPart then
+        self.box.Visible = false
+        self.healthBar.Visible = false
+        return
+    end
+
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    if not humanoid then
+        self.box.Visible = false
+        self.healthBar.Visible = false
+        return
+    end
+
+    local rootPos, onScreen = workspace.CurrentCamera:WorldToViewportPoint(rootPart.Position)
+    if onScreen then
+        local headPos = workspace.CurrentCamera:WorldToViewportPoint(head.Position)
+        local legPos = workspace.CurrentCamera:WorldToViewportPoint(rootPart.Position - Vector3.new(0, 3, 0))
+        self.box.Size = Vector2.new(1000 / rootPos.Z + 20, headPos.Y - legPos.Y) -- Make the box wider
+        self.box.Position = Vector2.new(rootPos.X - self.box.Size.X / 2, rootPos.Y - self.box.Size.Y / 2)
+        self.box.Visible = true
+
+        local healthPercent = humanoid.Health / humanoid.MaxHealth
+        self.healthBar.Size = Vector2.new(5, (headPos.Y - legPos.Y) * healthPercent)
+        self.healthBar.Position = Vector2.new(self.box.Position.X - 10, self.box.Position.Y + (headPos.Y - legPos.Y) * (1 - healthPercent))
+        self.healthBar.Visible = true
+    else
+        self.box.Visible = false
+        self.healthBar.Visible = false
+    end
+end
+
+function Box:SetVisible(visible)
+    self.box.Visible = visible
+    self.healthBar.Visible = visible
+end
+
+ESP.Box = Box
+
+return ESP
