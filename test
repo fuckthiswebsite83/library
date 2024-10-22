@@ -2,15 +2,12 @@ local ESP = {}
 ESP.__index = ESP
 
 local RunService = game:GetService("RunService")
-local Players = game:GetService("Players")
 
--- Box class
 local Box = {}
 Box.__index = Box
 
-function Box.new(character)
+function Box.new()
     local self = setmetatable({}, Box)
-    self.character = character
     self.box = Drawing.new("Square")
     self.box.Visible = false
     self.box.Color = Color3.new(1, 0, 0)
@@ -24,91 +21,103 @@ function Box.new(character)
     self.healthBar.Transparency = 1
     self.healthBar.Filled = true
 
-    self.connection = RunService.RenderStepped:Connect(function()
-        self:Update()
-    end)
+    self.nameText = Drawing.new("Text")
+    self.nameText.Visible = false
+    self.nameText.Color = Color3.new(1, 1, 1)
+    self.nameText.Size = 16
+    self.nameText.Center = true
+    self.nameText.Outline = true
+
+    self.distanceText = Drawing.new("Text")
+    self.distanceText.Visible = false
+    self.distanceText.Color = Color3.new(1, 1, 1)
+    self.distanceText.Size = 16
+    self.distanceText.Center = true
+    self.distanceText.Outline = true
 
     return self
 end
 
-function Box:Update()
-    local character = self.character
-    if not character or not character.Parent then
-        self:Remove()
-        return
-    end
-
+function Box:Update(character)
     local head = character:FindFirstChild("Head")
     local rootPart = character:FindFirstChild("HumanoidRootPart")
     local humanoid = character:FindFirstChildOfClass("Humanoid")
-
-    if not head or not rootPart or not humanoid or humanoid.Health <= 0 then
-        self:Remove()
+    
+    if not (head and rootPart and humanoid) then
+        self.box.Visible = false
+        self.healthBar.Visible = false
+        self.nameText.Visible = false
+        self.distanceText.Visible = false
         return
     end
 
-    local headPos, headOnScreen = workspace.CurrentCamera:WorldToViewportPoint(head.Position)
-    local rootPos, rootOnScreen = workspace.CurrentCamera:WorldToViewportPoint(rootPart.Position)
-    local legPos, legOnScreen = workspace.CurrentCamera:WorldToViewportPoint(rootPart.Position - Vector3.new(0, 3, 0))
+    local camera = workspace.CurrentCamera
 
-    if headOnScreen and rootOnScreen and legOnScreen then
-        local boxHeight = headPos.Y - legPos.Y
-        local boxWidth = boxHeight / 2 -- Adjust the width as needed
+    local cornerPoints = {
+        rootPart.Position + Vector3.new(2, 3, 2),
+        rootPart.Position + Vector3.new(-2, 3, 2),
+        rootPart.Position + Vector3.new(-2, -3, 2),
+        rootPart.Position + Vector3.new(2, -3, 2),
+        rootPart.Position + Vector3.new(2, 3, -2),
+        rootPart.Position + Vector3.new(-2, 3, -2),
+        rootPart.Position + Vector3.new(-2, -3, -2),
+        rootPart.Position + Vector3.new(2, -3, -2),
+    }
+
+    local screenPoints = {}
+    local onScreen = true
+    local minX, minY = math.huge, math.huge
+    local maxX, maxY = -math.huge, -math.huge
+    
+    for _, point in ipairs(cornerPoints) do
+        local screenPoint, visible = camera:WorldToViewportPoint(point)
+        if not visible then
+            onScreen = false
+            break
+        end
+        
+        minX = math.min(minX, screenPoint.X)
+        minY = math.min(minY, screenPoint.Y)
+        maxX = math.max(maxX, screenPoint.X)
+        maxY = math.max(maxY, screenPoint.Y)
+    end
+    
+    if onScreen then
+        local boxWidth = maxX - minX
+        local boxHeight = maxY - minY
 
         self.box.Size = Vector2.new(boxWidth, boxHeight)
-        self.box.Position = Vector2.new(rootPos.X - boxWidth / 2, headPos.Y - boxHeight / 2)
+        self.box.Position = Vector2.new(minX, minY)
         self.box.Visible = true
 
-        -- Update health bar
         local healthPercent = humanoid.Health / humanoid.MaxHealth
         self.healthBar.Size = Vector2.new(5, boxHeight * healthPercent)
-        self.healthBar.Position = Vector2.new(self.box.Position.X - 10, self.box.Position.Y + boxHeight * (1 - healthPercent))
+        self.healthBar.Position = Vector2.new(minX - 10, minY + boxHeight * (1 - healthPercent))
         self.healthBar.Visible = true
+
+        self.nameText.Text = character.Name
+        self.nameText.Position = Vector2.new(minX + boxWidth / 2, minY - self.nameText.TextBounds.Y - 2)
+        self.nameText.Visible = true
+
+        local distance = (camera.CFrame.Position - rootPart.Position).Magnitude
+        self.distanceText.Text = string.format("[%d studs]", math.floor(distance))
+        self.distanceText.Position = Vector2.new(minX + boxWidth / 2, maxY + 2)
+        self.distanceText.Visible = true
     else
         self.box.Visible = false
         self.healthBar.Visible = false
+        self.nameText.Visible = false
+        self.distanceText.Visible = false
     end
 end
 
-function Box:Remove()
-    self.box:Remove()
-    self.healthBar:Remove()
-    if self.connection then
-        self.connection:Disconnect()
-    end
+function Box:SetVisible(visible)
+    self.box.Visible = visible
+    self.healthBar.Visible = visible
+    self.nameText.Visible = visible
+    self.distanceText.Visible = visible
 end
 
 ESP.Box = Box
-
-function ESP:CreateBox(character)
-    return Box.new(character)
-end
-
-function ESP:RemoveBox(box)
-    box:Remove()
-end
-
-function ESP:TrackPlayer(player)
-    local function onCharacterAdded(character)
-        ESP:CreateBox(character)
-    end
-
-    player.CharacterAdded:Connect(onCharacterAdded)
-    if player.Character then
-        onCharacterAdded(player.Character)
-    end
-end
-
-function ESP:Init()
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= Players.LocalPlayer then
-            ESP:TrackPlayer(player)
-        end
-    end
-
-    Players.PlayerAdded:Connect(function(player)
-        ESP:TrackPlayer(player)
-    end)
-end
 
 return ESP
