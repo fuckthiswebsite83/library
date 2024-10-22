@@ -31,8 +31,8 @@ function Box.new(boxColor, boxThickness, boxTransparency, boxFilled)
     return self
 end
 
-function Box:Update(character, bounds)
-    if not bounds then
+function Box:Update(character, bounds, config)
+    if not (bounds and config.boxEnabled) then
         self:SetVisible(false)
         return
     end
@@ -57,8 +57,8 @@ function HealthBar.new(healthBarColor, healthBarThickness, healthBarTransparency
     return self
 end
 
-function HealthBar:Update(character, bounds)
-    if not (bounds and character) then
+function HealthBar:Update(character, bounds, config)
+    if not (bounds and config.healthBarEnabled) then
         self:SetVisible(false)
         return
     end
@@ -92,8 +92,8 @@ function NameTag.new(nameTagColor, nameTagSize, nameTagCenter, nameTagOutline, n
     return self
 end
 
-function NameTag:Update(character, bounds)
-    if not (bounds and character) then
+function NameTag:Update(character, bounds, config)
+    if not (bounds and config.nameTagEnabled) then
         self:SetVisible(false)
         return
     end
@@ -125,8 +125,8 @@ function Distance.new(distanceColor, distanceSize, distanceCenter, distanceOutli
     return self
 end
 
-function Distance:Update(character, bounds, distanceEnabled)
-    if not (bounds and character) or not distanceEnabled then
+function Distance:Update(character, bounds, config)
+    if not (bounds and config.distanceEnabled) then
         self:SetVisible(false)
         return
     end
@@ -162,7 +162,7 @@ function ESPObject.new(boxColor, boxThickness, boxTransparency, boxFilled, healt
     return self
 end
 
-function ESPObject:Update(character, distanceEnabled)
+function ESPObject:Update(character, config)
     if not character then
         self:SetVisible(false)
         return
@@ -174,10 +174,10 @@ function ESPObject:Update(character, distanceEnabled)
         return
     end
 
-    self.box:Update(character, bounds)
-    self.healthBar:Update(character, bounds)
-    self.nameTag:Update(character, bounds)
-    self.distance:Update(character, bounds, distanceEnabled)
+    self.box:Update(character, bounds, config)
+    self.healthBar:Update(character, bounds, config)
+    self.nameTag:Update(character, bounds, config)
+    self.distance:Update(character, bounds, config)
 end
 
 function ESPObject:CalculateBounds(character)
