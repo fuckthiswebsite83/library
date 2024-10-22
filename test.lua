@@ -4,7 +4,6 @@ ESP.__index = ESP
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 
--- Base class for all ESP elements
 local ESPComponent = {}
 ESPComponent.__index = ESPComponent
 
@@ -16,7 +15,6 @@ function ESPComponent:Destroy()
     self.drawable:Remove()
 end
 
--- Box Component
 local Box = setmetatable({}, ESPComponent)
 Box.__index = Box
 
@@ -42,7 +40,6 @@ function Box:Update(character, bounds, config)
     self.drawable.Visible = true
 end
 
--- HealthBar Component
 local HealthBar = setmetatable({}, ESPComponent)
 HealthBar.__index = HealthBar
 
@@ -76,7 +73,6 @@ function HealthBar:Update(character, bounds, config)
     self.drawable.Visible = true
 end
 
--- NameTag Component
 local NameTag = setmetatable({}, ESPComponent)
 NameTag.__index = NameTag
 
@@ -109,7 +105,6 @@ function NameTag:Update(character, bounds, config)
     self.drawable.Visible = true
 end
 
--- Distance Component
 local Distance = setmetatable({}, ESPComponent)
 Distance.__index = Distance
 
@@ -149,7 +144,6 @@ function Distance:Update(character, bounds, config)
     self.drawable.Visible = true
 end
 
--- Main ESP Handler
 local ESPObject = {}
 ESPObject.__index = ESPObject
 
