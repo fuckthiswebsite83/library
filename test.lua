@@ -114,7 +114,6 @@ function HealthBar:Update(character, bounds, config)
     local healthPercent = humanoid.Health / humanoid.MaxHealth
     local boxHeight = bounds.maxY - bounds.minY
     
-    -- Gradient from red to green
     local healthColor = Color3New(1 - healthPercent, healthPercent, 0)
     self.drawable.Color = healthColor
     
