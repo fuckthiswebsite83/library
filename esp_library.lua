@@ -70,7 +70,7 @@ function Box.new(boxColor, boxThickness, boxTransparency, boxFilled, fillColor, 
     return self
 end
 
-function Box:Update(character, bounds, config)
+function Box:Update(bounds, config)
     if not (bounds and config.boxEnabled) then
         self:SetVisible(false)
         self.fillDrawable.Visible = false
@@ -92,16 +92,6 @@ function Box:Update(character, bounds, config)
     else
         self.fillDrawable.Visible = false
     end
-end
-
-function Box:SetVisible(visible)
-    self.drawable.Visible = visible
-    self.fillDrawable.Visible = visible and self.fillDrawable.Visible
-end
-
-function Box:Destroy()
-    self.drawable:Remove()
-    self.fillDrawable:Remove()
 end
 
 local HealthBar = setmetatable({}, ESPComponent)
@@ -225,11 +215,12 @@ end
 local Cham = setmetatable({}, ESPComponent)
 Cham.__index = Cham
 
-function Cham.new(chamColor, chamThickness, chamTransparency, wallCheck)
+function Cham.new(chamColor, chamThickness, chamTransparency, wallCheck, outlineColor, outlineTransparency)
     local self = setmetatable({}, Cham)
     self.drawable = NewCham({
         FillColor = chamColor or Color3New(0, 0, 1),
-        OutlineTransparency = chamThickness or 2,
+        OutlineColor = outlineColor or Color3New(1, 1, 1),
+        OutlineTransparency = outlineTransparency or 0.5,
         FillTransparency = chamTransparency or 0.5,
         Enabled = false
     })
@@ -237,7 +228,7 @@ function Cham.new(chamColor, chamThickness, chamTransparency, wallCheck)
     return self
 end
 
-function Cham:Update(character, bounds, config)
+function Cham:Update(character, config)
     if not config.chamEnabled then
         self:SetVisible(false)
         return
@@ -250,13 +241,13 @@ end
 local ESPObject = {}
 ESPObject.__index = ESPObject
 
-function ESPObject.new(boxColor, boxThickness, boxTransparency, boxFilled, boxFillColor, boxFillTransparency, healthBarColor, healthBarThickness, healthBarTransparency, healthBarFilled, nameTagColor, nameTagSize, nameTagCenter, nameTagOutline, nameTagOutlineColor, distanceColor, distanceSize, distanceCenter, distanceOutline, distanceOutlineColor, chamColor, chamThickness, chamTransparency, wallCheck)
+function ESPObject.new(boxColor, boxThickness, boxTransparency, boxFilled, boxFillColor, boxFillTransparency, healthBarColor, healthBarThickness, healthBarTransparency, healthBarFilled, nameTagColor, nameTagSize, nameTagCenter, nameTagOutline, nameTagOutlineColor, distanceColor, distanceSize, distanceCenter, distanceOutline, distanceOutlineColor, chamColor, chamThickness, chamTransparency, wallCheck, outlineColor, outlineTransparency)
     local self = setmetatable({}, ESPObject)
     self.box = Box.new(boxColor, boxThickness, boxTransparency, boxFilled, boxFillColor, boxFillTransparency)
     self.healthBar = HealthBar.new(healthBarColor, healthBarThickness, healthBarTransparency, healthBarFilled)
     self.nameTag = NameTag.new(nameTagColor, nameTagSize, nameTagCenter, nameTagOutline, nameTagOutlineColor)
     self.distance = Distance.new(distanceColor, distanceSize, distanceCenter, distanceOutline, distanceOutlineColor)
-    self.cham = Cham.new(chamColor, chamThickness, chamTransparency, wallCheck)
+    self.cham = Cham.new(chamColor, chamThickness, chamTransparency, wallCheck, outlineColor, outlineTransparency)
     return self
 end
 
@@ -272,11 +263,11 @@ function ESPObject:Update(character, config)
         return
     end
 
-    self.box:Update(character, bounds, config)
+    self.box:Update(bounds, config)
     self.healthBar:Update(character, bounds, config)
     self.nameTag:Update(character, bounds, config)
     self.distance:Update(character, bounds, config)
-    self.cham:Update(character, bounds, config)
+    self.cham:Update(character, config)
 end
 
 function ESPObject:CalculateBounds(character)
