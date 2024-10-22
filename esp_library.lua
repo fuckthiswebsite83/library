@@ -70,81 +70,19 @@ function Box.new(boxColor, boxThickness, boxTransparency, boxFilled, fillColor, 
     return self
 end
 
-local function isBodyPart(name)
-    return name == "Head" or name:find("Torso") or name:find("Leg") or name:find("Arm")
-end
-
-local function getBoundingBox(parts)
-    local min, max
-    for i = 1, #parts do
-        local part = parts[i]
-        local cframe, size = part.CFrame, part.Size
-
-        min = Vector3.zero.Min(min or cframe.Position, (cframe - size * 0.5).Position)
-        max = Vector3.zero.Max(max or cframe.Position, (cframe + size * 0.5).Position)
-    end
-
-    local center = (min + max) * 0.5
-    local front = Vector3.new(center.X, center.Y, max.Z)
-    return CFrame.new(center, front), max - min
-end
-
-local function worldToScreen(world)
-    local screen, inBounds = Camera:WorldToViewportPoint(Camera, world)
-    return Vector2.new(screen.X, screen.Y), inBounds, screen.Z
-end
-
-local function calculateCorners(cframe, size)
-    local VERTICES = {
-        Vector3.new(-1, -1, -1),
-        Vector3.new(-1, 1, -1),
-        Vector3.new(-1, 1, 1),
-        Vector3.new(-1, -1, 1),
-        Vector3.new(1, -1, -1),
-        Vector3.new(1, 1, -1),
-        Vector3.new(1, 1, 1),
-        Vector3.new(1, -1, 1)
-    }
-    local corners = table.create(#VERTICES)
-    for i = 1, #VERTICES do
-        corners[i] = worldToScreen((cframe + size * 0.5 * VERTICES[i]).Position)
-    end
-
-    local min = Vector2.zero.Min(Camera.ViewportSize, unpack(corners))
-    local max = Vector2.zero.Max(Vector2.zero, unpack(corners))
-    return {
-        corners = corners,
-        topLeft = Vector2.new(math.floor(min.X), math.floor(min.Y)),
-        topRight = Vector2.new(math.floor(max.X), math.floor(min.Y)),
-        bottomLeft = Vector2.new(math.floor(min.X), math.floor(max.Y)),
-        bottomRight = Vector2.new(math.floor(max.X), math.floor(max.Y))
-    }
-end
-
-function Box:Update(character, config)
-    if not config.boxEnabled then
+function Box:Update(character, bounds, config)
+    if not (bounds and config.boxEnabled) then
         self:SetVisible(false)
         self.fillDrawable.Visible = false
         return
     end
-
-    local cache = {}
-    for i = 1, #character:GetChildren() do
-        local part = character:GetChildren()[i]
-        if part:IsA("BasePart") and isBodyPart(part.Name) then
-            cache[#cache + 1] = part
-        end
-    end
-
-    local cframe, size = getBoundingBox(cache)
-    local corners = calculateCorners(cframe, size)
-
-    self.drawable.Size = Vector2New(corners.bottomRight.X - corners.topLeft.X, corners.bottomRight.Y - corners.topLeft.Y)
-    self.drawable.Position = Vector2New(corners.topLeft.X, corners.topLeft.Y)
+    
+    self.drawable.Size = Vector2New(bounds.maxX - bounds.minX, bounds.maxY - bounds.minY)
+    self.drawable.Position = Vector2New(bounds.minX, bounds.minY)
     self.drawable.Color = config.boxColor
     self.drawable.Transparency = config.boxTransparency
     self.drawable.Visible = true
-
+    
     if config.boxFilled then
         self.fillDrawable.Size = self.drawable.Size
         self.fillDrawable.Position = self.drawable.Position
@@ -339,17 +277,7 @@ function ESPObject:Update(character, config)
         return
     end
 
-    local cache = {}
-    for i = 1, #character:GetChildren() do
-        local part = character:GetChildren()[i]
-        if part:IsA("BasePart") and isBodyPart(part.Name) then
-            cache[#cache + 1] = part
-        end
-    end
-
-    local cframe, size = getBoundingBox(cache)
-    local bounds = calculateCorners(cframe, size)
-
+    local bounds = self:CalculateBounds(character)
     if not bounds then
         self:SetVisible(false)
         return
@@ -360,6 +288,65 @@ function ESPObject:Update(character, config)
     self.nameTag:Update(character, bounds, config)
     self.distance:Update(character, bounds, config)
     self.cham:Update(character, bounds, config)
+end
+
+function ESPObject:CalculateBounds(character)
+    local hrp = character:FindFirstChild("HumanoidRootPart")
+    if not hrp then return nil end
+
+    local size = character:GetExtentsSize()
+    local cf = character:GetPivot()
+    
+    local corners = {
+        cf * Vector3New(size.X/2, size.Y/2, size.X/2),
+        cf * Vector3New(-size.X/2, size.Y/2, size.X/2),
+        cf * Vector3New(-size.X/2, -size.Y/2, size.X/2),
+        cf * Vector3New(size.X/2, -size.Y/2, size.X/2),
+        cf * Vector3New(size.X/2, size.Y/2, -size.X/2),
+        cf * Vector3New(-size.X/2, size.Y/2, -size.X/2),
+        cf * Vector3New(-size.X/2, -size.Y/2, -size.X/2),
+        cf * Vector3New(size.X/2, -size.Y/2, -size.X/2),
+    }
+
+    local minX, minY = math.huge, math.huge
+    local maxX, maxY = -math.huge, -math.huge
+    local onScreen = false
+    
+    for _, corner in ipairs(corners) do
+        local screenPoint, visible = Camera:WorldToViewportPoint(corner)
+        if visible then
+            onScreen = true
+            minX = math.min(minX, screenPoint.X)
+            minY = math.min(minY, screenPoint.Y)
+            maxX = math.max(maxX, screenPoint.X)
+            maxY = math.max(maxY, screenPoint.Y)
+        end
+    end
+    
+    if not onScreen then return nil end
+
+    local minSize = 8
+    local width = maxX - minX
+    local height = maxY - minY
+    
+    if width < minSize then
+        local center = (minX + maxX) / 2
+        minX = center - minSize / 2
+        maxX = center + minSize / 2
+    end
+    
+    if height < minSize then
+        local center = (minY + maxY) / 2
+        minY = center - minSize / 2
+        maxY = center + minSize / 2
+    end
+    
+    return {
+        minX = minX,
+        minY = minY,
+        maxX = maxX,
+        maxY = maxY
+    }
 end
 
 function ESPObject:SetVisible(visible)
@@ -382,6 +369,7 @@ end
 
 ESP.Object = ESPObject
 
+-- PartESP Integration
 local PartESP = {}
 PartESP.__index = PartESP
 
