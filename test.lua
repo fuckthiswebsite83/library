@@ -59,16 +59,21 @@ function Box.new(boxColor, boxThickness, boxTransparency, boxFilled, fillColor, 
         Color = boxColor or Color3New(1, 0, 0),
         Thickness = boxThickness or 2,
         Transparency = boxTransparency or 1,
-        Filled = boxFilled or false
+        Filled = false
     })
-    self.fillColor = fillColor or Color3New(1, 1, 1)
-    self.fillTransparency = fillTransparency or 1
+    self.fillDrawable = NewDrawing("Square", {
+        Visible = false,
+        Color = fillColor or Color3New(1, 1, 1),
+        Transparency = fillTransparency or 1,
+        Filled = true
+    })
     return self
 end
 
 function Box:Update(character, bounds, config)
     if not (bounds and config.boxEnabled) then
         self:SetVisible(false)
+        self.fillDrawable.Visible = false
         return
     end
     
@@ -76,12 +81,27 @@ function Box:Update(character, bounds, config)
     self.drawable.Position = Vector2New(bounds.minX, bounds.minY)
     self.drawable.Color = config.boxColor
     self.drawable.Transparency = config.boxTransparency
-    self.drawable.Filled = config.boxFilled
+    self.drawable.Visible = true
+    
     if config.boxFilled then
-        self.drawable.Color = self.fillColor
-        self.drawable.Transparency = self.fillTransparency
+        self.fillDrawable.Size = self.drawable.Size
+        self.fillDrawable.Position = self.drawable.Position
+        self.fillDrawable.Color = config.boxFillColor
+        self.fillDrawable.Transparency = config.boxFillTransparency
+        self.fillDrawable.Visible = true
+    else
+        self.fillDrawable.Visible = false
     end
-    self:SetVisible(true)
+end
+
+function Box:SetVisible(visible)
+    self.drawable.Visible = visible
+    self.fillDrawable.Visible = visible and self.fillDrawable.Visible
+end
+
+function Box:Destroy()
+    self.drawable:Remove()
+    self.fillDrawable:Remove()
 end
 
 local HealthBar = setmetatable({}, ESPComponent)
@@ -230,9 +250,9 @@ end
 local ESPObject = {}
 ESPObject.__index = ESPObject
 
-function ESPObject.new(boxColor, boxThickness, boxTransparency, boxFilled, fillColor, fillTransparency, healthBarColor, healthBarThickness, healthBarTransparency, healthBarFilled, nameTagColor, nameTagSize, nameTagCenter, nameTagOutline, nameTagOutlineColor, distanceColor, distanceSize, distanceCenter, distanceOutline, distanceOutlineColor, chamColor, chamThickness, chamTransparency, wallCheck)
+function ESPObject.new(boxColor, boxThickness, boxTransparency, boxFilled, boxFillColor, boxFillTransparency, healthBarColor, healthBarThickness, healthBarTransparency, healthBarFilled, nameTagColor, nameTagSize, nameTagCenter, nameTagOutline, nameTagOutlineColor, distanceColor, distanceSize, distanceCenter, distanceOutline, distanceOutlineColor, chamColor, chamThickness, chamTransparency, wallCheck)
     local self = setmetatable({}, ESPObject)
-    self.box = Box.new(boxColor, boxThickness, boxTransparency, boxFilled, fillColor, fillTransparency)
+    self.box = Box.new(boxColor, boxThickness, boxTransparency, boxFilled, boxFillColor, boxFillTransparency)
     self.healthBar = HealthBar.new(healthBarColor, healthBarThickness, healthBarTransparency, healthBarFilled)
     self.nameTag = NameTag.new(nameTagColor, nameTagSize, nameTagCenter, nameTagOutline, nameTagOutlineColor)
     self.distance = Distance.new(distanceColor, distanceSize, distanceCenter, distanceOutline, distanceOutlineColor)
