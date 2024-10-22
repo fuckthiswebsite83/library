@@ -420,56 +420,67 @@ function PartESPObject:UpdateDrawables()
     self.distanceDrawable.OutlineColor = self.options.textOutlineColor
 end
 
-function PartESPObject:FormatText()
-    local text = self.options.text
-    local distance = (Camera.CFrame.Position - self.instance.Position).Magnitude
-    
-    text = text:gsub("{name}", self.instance.Name)
-    text = text:gsub("{distance}", tostring(MathFloor(distance)))
-    text = text:gsub("{position}", tostring(self.instance.Position))
-    
-    return text
-end
-
 function PartESPObject:Update()
     if not self.options.enabled then
-        self.nameDrawable.Visible = false
-        self.distanceDrawable.Visible = false
+        self:SetVisible(false)
         return
     end
     
-    if not self.instance or not self.instance.Parent then
-        self:Destroy()
+    local screenPoint, onScreen = Camera:WorldToViewportPoint(self.instance.Position)
+    if not onScreen then
+        self:SetVisible(false)
         return
     end
     
-    local position, visible = Camera:WorldToViewportPoint(self.instance.Position)
-    if not visible then
-        self.nameDrawable.Visible = false
-        self.distanceDrawable.Visible = false
-        return
-    end
+    self.nameDrawable.Text = self.options.text:gsub("{name}", self.instance.Name)
+    self.nameDrawable.Position = Vector2New(screenPoint.X, screenPoint.Y - 20)
+    self.nameDrawable.Visible = true
     
     local distance = (Camera.CFrame.Position - self.instance.Position).Magnitude
-    self.nameDrawable.Text = self.instance.Name
     self.distanceDrawable.Text = string.format("[%d studs]", MathFloor(distance))
-    
-    self.nameDrawable.Position = Vector2New(position.X, position.Y)
-    self.distanceDrawable.Position = Vector2New(position.X, position.Y + self.nameDrawable.TextBounds.Y + 2)
-    
-    self.nameDrawable.Visible = true
+    self.distanceDrawable.Position = Vector2New(screenPoint.X, screenPoint.Y + 5)
     self.distanceDrawable.Visible = true
 end
 
-function PartESPObject:Destroy()
-    self.connection:Disconnect()
-    self.nameDrawable:Remove()
-    self.distanceDrawable:Remove()
+function PartESPObject:SetVisible(visible)
+    self.nameDrawable.Visible = visible
+    self.distanceDrawable.Visible = visible
 end
 
-function PartESP.AddInstance(instance, options)
-    return PartESPObject.new(instance, options or {})
+function PartESPObject:Destroy()
+    self.nameDrawable:Remove()
+    self.distanceDrawable:Remove()
+    if self.connection then
+        self.connection:Disconnect()
+    end
 end
+
+PartESP.Object = PartESPObject
+
+function PartESP:Add(instance, options)
+    local espObject = PartESPObject.new(instance, options)
+    table.insert(self.objects, espObject)
+    return espObject
+end
+
+function PartESP:Remove(instance)
+    for i, espObject in ipairs(self.objects) do
+        if espObject.instance == instance then
+            espObject:Destroy()
+            table.remove(self.objects, i)
+            break
+        end
+    end
+end
+
+function PartESP:Clear()
+    for _, espObject in ipairs(self.objects) do
+        espObject:Destroy()
+    end
+    self.objects = {}
+end
+
+PartESP.objects = {}
 
 ESP.PartESP = PartESP
 
