@@ -2,98 +2,188 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 
--- Cache frequently used values and functions
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
-local Vector2New, Vector3New = Vector2.new, Vector3.new
-local Color3New = Color3.new
+
 local DrawingNew = Drawing.new
+local Color3New = Color3.new
+local Vector2New = Vector2.new
+local Vector3New = Vector3.new
 local MathFloor = math.floor
-local MathMin, MathMax = math.min, math.max
-local TableRemove = table.remove
 
--- Pooling system for drawing objects
-local DrawingPool = {
-    Square = {},
-    Text = {},
-    count = {Square = 0, Text = 0}
-}
+local ESP = {}
+ESP.__index = ESP
 
-local function GetDrawing(type, properties)
-    local pool = DrawingPool[type]
-    local drawing = TableRemove(pool) or DrawingNew(type)
-    DrawingPool.count[type] = DrawingPool.count[type] + 1
-    
-    -- Apply properties in bulk
-    for k, v in pairs(properties) do
-        drawing[k] = v
-    end
-    
-    return drawing
-end
-
-local function ReturnDrawing(drawing, type)
-    if drawing then
-        drawing.Visible = false
-        table.insert(DrawingPool[type], drawing)
-        DrawingPool.count[type] = DrawingPool.count[type] - 1
-    end
-end
-
--- Optimized ESP component base class
 local ESPComponent = {}
 ESPComponent.__index = ESPComponent
 
 function ESPComponent:SetVisible(visible)
-    self.drawable.Visible = visible
-end
-
-function ESPComponent:Destroy()
-    if self.drawable then
-        ReturnDrawing(self.drawable, self.type)
-        self.drawable = nil
+    if typeof(self.drawable) == "Instance" and self.drawable:IsA("Highlight") then
+        self.drawable.Enabled = visible
+    else
+        self.drawable.Visible = visible
     end
 end
 
--- Optimized Box component
+function ESPComponent:Destroy()
+    if typeof(self.drawable) == "Instance" then
+        self.drawable:Destroy()
+    else
+        self.drawable:Remove()
+    end
+end
+
+local function NewDrawing(type, properties)
+    local drawing = DrawingNew(type)
+    for prop, value in pairs(properties or {}) do
+        drawing[prop] = value
+    end
+    return drawing
+end
+
+local function NewCham(properties)
+    local cham = Instance.new("Highlight", game.CoreGui)
+    for prop, value in pairs(properties or {}) do
+        cham[prop] = value
+    end
+    return cham
+end
+
 local Box = setmetatable({}, ESPComponent)
 Box.__index = Box
 
-function Box.new()
+function Box.new(boxColor, boxThickness, boxTransparency, boxFilled, fillColor, fillTransparency)
     local self = setmetatable({}, Box)
-    self.type = "Square"
-    self.drawable = GetDrawing("Square", {
+    self.drawable = NewDrawing("Square", {
         Visible = false,
-        Thickness = 1,
+        Color = boxColor or Color3New(1, 0, 0),
+        Thickness = boxThickness or 2,
+        Transparency = boxTransparency or 1,
         Filled = false
+    })
+    self.fillDrawable = NewDrawing("Square", {
+        Visible = false,
+        Color = fillColor or Color3New(1, 1, 1),
+        Transparency = fillTransparency or 1,
+        Filled = true
     })
     return self
 end
 
-function Box:Update(bounds, config)
-    if not (bounds and config.boxEnabled) then
-        self:SetVisible(false)
-        return
-    end
-    
-    local drawable = self.drawable
-    drawable.Size = Vector2New(bounds.maxX - bounds.minX, bounds.maxY - bounds.minY)
-    drawable.Position = Vector2New(bounds.minX, bounds.minY)
-    drawable.Color = config.boxColor
-    drawable.Visible = true
+local function isBodyPart(name)
+    return name == "Head" or name:find("Torso") or name:find("Leg") or name:find("Arm")
 end
 
--- Optimized HealthBar component
+local function getBoundingBox(parts)
+    local min, max
+    for i = 1, #parts do
+        local part = parts[i]
+        local cframe, size = part.CFrame, part.Size
+
+        min = Vector3.zero.Min(min or cframe.Position, (cframe - size * 0.5).Position)
+        max = Vector3.zero.Max(max or cframe.Position, (cframe + size * 0.5).Position)
+    end
+
+    local center = (min + max) * 0.5
+    local front = Vector3.new(center.X, center.Y, max.Z)
+    return CFrame.new(center, front), max - min
+end
+
+local function worldToScreen(world)
+    local screen, inBounds = Camera:WorldToViewportPoint(Camera, world)
+    return Vector2.new(screen.X, screen.Y), inBounds, screen.Z
+end
+
+local function calculateCorners(cframe, size)
+    local VERTICES = {
+        Vector3.new(-1, -1, -1),
+        Vector3.new(-1, 1, -1),
+        Vector3.new(-1, 1, 1),
+        Vector3.new(-1, -1, 1),
+        Vector3.new(1, -1, -1),
+        Vector3.new(1, 1, -1),
+        Vector3.new(1, 1, 1),
+        Vector3.new(1, -1, 1)
+    }
+    local corners = table.create(#VERTICES)
+    for i = 1, #VERTICES do
+        corners[i] = worldToScreen((cframe + size * 0.5 * VERTICES[i]).Position)
+    end
+
+    local min = Vector2.zero.Min(Camera.ViewportSize, unpack(corners))
+    local max = Vector2.zero.Max(Vector2.zero, unpack(corners))
+    return {
+        corners = corners,
+        topLeft = Vector2.new(math.floor(min.X), math.floor(min.Y)),
+        topRight = Vector2.new(math.floor(max.X), math.floor(min.Y)),
+        bottomLeft = Vector2.new(math.floor(min.X), math.floor(max.Y)),
+        bottomRight = Vector2.new(math.floor(max.X), math.floor(max.Y))
+    }
+end
+
+function Box:Update(character, config)
+    if not config.boxEnabled then
+        self:SetVisible(false)
+        self.fillDrawable.Visible = false
+        return
+    end
+
+    local cache = {}
+    for i = 1, #character:GetChildren() do
+        local part = character:GetChildren()[i]
+        if part:IsA("BasePart") and isBodyPart(part.Name) then
+            cache[#cache + 1] = part
+        end
+    end
+
+    local cframe, size = getBoundingBox(cache)
+    local corners = calculateCorners(cframe, size)
+
+    self.drawable.Size = Vector2New(corners.bottomRight.X - corners.topLeft.X, corners.bottomRight.Y - corners.topLeft.Y)
+    self.drawable.Position = Vector2New(corners.topLeft.X, corners.topLeft.Y)
+    self.drawable.Color = config.boxColor
+    self.drawable.Transparency = config.boxTransparency
+    self.drawable.Visible = true
+
+    if config.boxFilled then
+        self.fillDrawable.Size = self.drawable.Size
+        self.fillDrawable.Position = self.drawable.Position
+        self.fillDrawable.Color = config.boxFillColor
+        self.fillDrawable.Transparency = config.boxFillTransparency
+        self.fillDrawable.Visible = true
+    else
+        self.fillDrawable.Visible = false
+    end
+end
+
+function Box:SetVisible(visible)
+    self.drawable.Visible = visible
+    self.fillDrawable.Visible = visible and self.fillDrawable.Visible
+end
+
+function Box:Destroy()
+    self.drawable:Remove()
+    self.fillDrawable:Remove()
+end
+
 local HealthBar = setmetatable({}, ESPComponent)
 HealthBar.__index = HealthBar
 
-function HealthBar.new()
+function HealthBar.new(healthBarColor, healthBarThickness, healthBarTransparency, healthBarFilled)
     local self = setmetatable({}, HealthBar)
-    self.type = "Square"
-    self.drawable = GetDrawing("Square", {
+    self.drawable = NewDrawing("Square", {
         Visible = false,
-        Thickness = 1,
-        Filled = true
+        Color = healthBarColor or Color3New(0, 1, 0),
+        Thickness = healthBarThickness or 1,
+        Transparency = healthBarTransparency or 1,
+        Filled = healthBarFilled or true
+    })
+    self.outline = NewDrawing("Square", {
+        Visible = false,
+        Color = Color3New(0, 0, 0),
+        Thickness = healthBarThickness or 1,
+        Transparency = healthBarTransparency or 1,
+        Filled = false
     })
     return self
 end
@@ -101,43 +191,61 @@ end
 function HealthBar:Update(character, bounds, config)
     if not (bounds and config.healthBarEnabled) then
         self:SetVisible(false)
+        self.outline.Visible = false
         return
     end
     
-    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    local humanoid
+    if game.PlaceId == 863266079 then
+        local player = Players:GetPlayerFromCharacter(character)
+        if player and player:FindFirstChild("Stats") and player.Stats:FindFirstChild("Health") then
+            humanoid = {
+                Health = player.Stats.Health.Value,
+                MaxHealth = 100
+            }
+        end
+    else
+        humanoid = character:FindFirstChildOfClass("Humanoid")
+    end
+
     if not humanoid then
         self:SetVisible(false)
+        self.outline.Visible = false
         return
     end
     
     local healthPercent = humanoid.Health / humanoid.MaxHealth
     local boxHeight = bounds.maxY - bounds.minY
     
-    self.drawable.Size = Vector2New(4, boxHeight * healthPercent)
-    self.drawable.Position = Vector2New(bounds.minX - 6, bounds.minY + boxHeight * (1 - healthPercent))
-    self.drawable.Color = Color3New(1 - healthPercent, healthPercent, 0)
-    self.drawable.Visible = true
+    local healthColor = Color3New(1 - healthPercent, healthPercent, 0)
+    self.drawable.Color = healthColor
+    
+    self.drawable.Size = Vector2New(5, boxHeight * healthPercent)
+    self.drawable.Position = Vector2New(bounds.minX - 10, bounds.minY + boxHeight * (1 - healthPercent))
+    self:SetVisible(true)
+    
+    self.outline.Size = Vector2New(5, boxHeight)
+    self.outline.Position = Vector2New(bounds.minX - 10, bounds.minY)
+    self.outline.Visible = true
 end
 
--- Optimized NameTag component
 local NameTag = setmetatable({}, ESPComponent)
 NameTag.__index = NameTag
 
-function NameTag.new()
+function NameTag.new(nameTagColor, nameTagCenter, nameTagOutline, nameTagOutlineColor)
     local self = setmetatable({}, NameTag)
-    self.type = "Text"
-    self.drawable = GetDrawing("Text", {
+    self.drawable = NewDrawing("Text", {
         Visible = false,
-        Center = true,
-        Outline = true,
-        Color = Color3New(1, 1, 1),
-        OutlineColor = Color3New(0, 0, 0)
+        Color = nameTagColor or Color3New(1, 1, 1),
+        Center = nameTagCenter or true,
+        Outline = nameTagOutline or true,
+        OutlineColor = nameTagOutlineColor or Color3New(0, 0, 0)
     })
     return self
 end
 
 function NameTag:Update(character, bounds, config)
-    if not (bounds and config.nameEnabled) then
+    if not (bounds and config.nameTagEnabled) then
         self:SetVisible(false)
         return
     end
@@ -149,139 +257,231 @@ function NameTag:Update(character, bounds, config)
     end
     
     self.drawable.Text = player.Name
-    self.drawable.Position = Vector2New(
-        bounds.minX + (bounds.maxX - bounds.minX) * 0.5,
-        bounds.minY - 15
-    )
-    self.drawable.Visible = true
+    self.drawable.Position = Vector2New(bounds.minX + ((bounds.maxX - bounds.minX) / 2), bounds.minY - 20)
+    self:SetVisible(true)
 end
 
--- Main ESP object with optimized bounds calculation
-local ESP = {}
-ESP.__index = ESP
+local Distance = setmetatable({}, ESPComponent)
+Distance.__index = Distance
 
-function ESP.new()
-    local self = setmetatable({}, ESP)
-    self.objects = {}
-    self.enabled = false
+function Distance.new(distanceColor, distanceCenter, distanceOutline, distanceOutlineColor)
+    local self = setmetatable({}, Distance)
+    self.drawable = NewDrawing("Text", {
+        Visible = false,
+        Color = distanceColor or Color3New(1, 1, 1),
+        Center = distanceCenter or true,
+        Outline = distanceOutline or true,
+        OutlineColor = distanceOutlineColor or Color3New(0, 0, 0)
+    })
     return self
 end
 
-function ESP:CreateObject(character)
-    local object = {
-        character = character,
-        box = Box.new(),
-        healthBar = HealthBar.new(),
-        nameTag = NameTag.new(),
-        lastUpdate = 0
+function Distance:Update(character, bounds, config)
+    if not (bounds and config.distanceEnabled) then
+        self:SetVisible(false)
+        return
+    end
+    
+    local rootPart = character:FindFirstChild("HumanoidRootPart")
+    if not rootPart then
+        self:SetVisible(false)
+        return
+    end
+    
+    local distance = (Camera.CFrame.Position - rootPart.Position).Magnitude
+    self.drawable.Text = string.format("[%d studs]", MathFloor(distance))
+    self.drawable.Position = Vector2New(bounds.minX + ((bounds.maxX - bounds.minX) / 2), bounds.maxY + 5)
+    self:SetVisible(true)
+end
+
+local Cham = setmetatable({}, ESPComponent)
+Cham.__index = Cham
+
+function Cham.new(chamColor, chamThickness, chamTransparency, wallCheck, outlineColor, outlineTransparency)
+    local self = setmetatable({}, Cham)
+    self.drawable = NewCham({
+        FillColor = chamColor or Color3New(0, 0, 1),
+        OutlineColor = outlineColor or Color3New(1, 1, 1),
+        OutlineTransparency = outlineTransparency or 0.5,
+        FillTransparency = chamTransparency or 0.5,
+        Enabled = false
+    })
+    self.wallCheck = wallCheck or false
+    return self
+end
+
+function Cham:Update(character, bounds, config)
+    if not config.chamEnabled then
+        self:SetVisible(false)
+        return
+    end
+    
+    self.drawable.Adornee = character
+    self:SetVisible(true)
+end
+
+local ESPObject = {}
+ESPObject.__index = ESPObject
+
+function ESPObject.new(boxColor, boxThickness, boxTransparency, boxFilled, boxFillColor, boxFillTransparency, healthBarColor, healthBarThickness, healthBarTransparency, healthBarFilled, nameTagColor, nameTagCenter, nameTagOutline, nameTagOutlineColor, distanceColor, distanceCenter, distanceOutline, distanceOutlineColor, chamColor, chamThickness, chamTransparency, wallCheck, outlineColor, outlineTransparency)
+    local self = setmetatable({}, ESPObject)
+    self.box = Box.new(boxColor, boxThickness, boxTransparency, boxFilled, boxFillColor, boxFillTransparency)
+    self.healthBar = HealthBar.new(healthBarColor, healthBarThickness, healthBarTransparency, healthBarFilled)
+    self.nameTag = NameTag.new(nameTagColor, nameTagCenter, nameTagOutline, nameTagOutlineColor)
+    self.distance = Distance.new(distanceColor, distanceCenter, distanceOutline, distanceOutlineColor)
+    self.cham = Cham.new(chamColor, chamThickness, chamTransparency, wallCheck, outlineColor, outlineTransparency)
+    return self
+end
+
+function ESPObject:Update(character, config)
+    if not character then
+        self:SetVisible(false)
+        return
+    end
+
+    local cache = {}
+    for i = 1, #character:GetChildren() do
+        local part = character:GetChildren()[i]
+        if part:IsA("BasePart") and isBodyPart(part.Name) then
+            cache[#cache + 1] = part
+        end
+    end
+
+    local cframe, size = getBoundingBox(cache)
+    local bounds = calculateCorners(cframe, size)
+
+    if not bounds then
+        self:SetVisible(false)
+        return
+    end
+
+    self.box:Update(character, bounds, config)
+    self.healthBar:Update(character, bounds, config)
+    self.nameTag:Update(character, bounds, config)
+    self.distance:Update(character, bounds, config)
+    self.cham:Update(character, bounds, config)
+end
+
+function ESPObject:SetVisible(visible)
+    self.box:SetVisible(visible)
+    self.healthBar:SetVisible(visible)
+    self.healthBar.outline.Visible = visible
+    self.nameTag:SetVisible(visible)
+    self.distance:SetVisible(visible)
+    self.cham:SetVisible(visible)
+end
+
+function ESPObject:Destroy()
+    self.box:Destroy()
+    self.healthBar:Destroy()
+    self.healthBar.outline:Remove()
+    self.nameTag:Destroy()
+    self.distance:Destroy()
+    self.cham:Destroy()
+end
+
+ESP.Object = ESPObject
+
+local PartESP = {}
+PartESP.__index = PartESP
+
+local PartESPObject = {}
+PartESPObject.__index = PartESPObject
+
+function PartESPObject.new(instance, options)
+    local self = setmetatable({}, PartESPObject)
+    
+    self.instance = instance
+    self.options = {
+        enabled = options.enabled ~= false,
+        text = options.text or "{name}",
+        textColor = options.textColor or {Color3New(1,1,1), 1},
+        textOutline = options.textOutline ~= false,
+        textOutlineColor = options.textOutlineColor or Color3New()
     }
-    self.objects[character] = object
-    return object
-end
-
-function ESP:RemoveObject(character)
-    local object = self.objects[character]
-    if object then
-        object.box:Destroy()
-        object.healthBar:Destroy()
-        object.nameTag:Destroy()
-        self.objects[character] = nil
-    end
-end
-
--- Cached vectors for bounds calculation
-local cornerOffsets = {
-    Vector3New(0.5, 0.5, 0.5),
-    Vector3New(-0.5, 0.5, 0.5),
-    Vector3New(-0.5, -0.5, 0.5),
-    Vector3New(0.5, -0.5, 0.5)
-}
-
-function ESP:CalculateBounds(cf, size)
-    local minX, minY = math.huge, math.huge
-    local maxX, maxY = -math.huge, -math.huge
-    local onScreen = false
     
-    for _, offset in ipairs(cornerOffsets) do
-        local worldPoint = cf * (offset * size)
-        local screenPoint, visible = Camera:WorldToViewportPoint(worldPoint)
-        
-        if visible then
-            onScreen = true
-            minX = MathMin(minX, screenPoint.X)
-            minY = MathMin(minY, screenPoint.Y)
-            maxX = MathMax(maxX, screenPoint.X)
-            maxY = MathMax(maxY, screenPoint.Y)
-        end
+    self.nameDrawable = DrawingNew("Text")
+    self.distanceDrawable = DrawingNew("Text")
+    self:UpdateDrawables()
+    
+    self.connection = RunService.RenderStepped:Connect(function()
+        self:Update()
+    end)
+    
+    return self
+end
+
+function PartESPObject:UpdateDrawables()
+    self.nameDrawable.Visible = false
+    self.nameDrawable.Color = self.options.textColor[1]
+    self.nameDrawable.Transparency = self.options.textColor[2]
+    self.nameDrawable.Size = self.options.textSize
+    self.nameDrawable.Font = self.options.textFont
+    self.nameDrawable.Center = true
+    self.nameDrawable.Outline = self.options.textOutline
+    self.nameDrawable.OutlineColor = self.options.textOutlineColor
+
+    self.distanceDrawable.Visible = false
+    self.distanceDrawable.Color = self.options.textColor[1]
+    self.distanceDrawable.Transparency = self.options.textColor[2]
+    self.distanceDrawable.Size = self.options.textSize
+    self.distanceDrawable.Font = self.options.textFont
+    self.distanceDrawable.Center = true
+    self.distanceDrawable.Outline = self.options.textOutline
+    self.distanceDrawable.OutlineColor = self.options.textOutlineColor
+end
+
+function PartESPObject:FormatText()
+    local text = self.options.text
+    local distance = (Camera.CFrame.Position - self.instance.Position).Magnitude
+    
+    text = text:gsub("{name}", self.instance.Name)
+    text = text:gsub("{distance}", tostring(MathFloor(distance)))
+    text = text:gsub("{position}", tostring(self.instance.Position))
+    
+    return text
+end
+
+function PartESPObject:Update()
+    if not self.options.enabled then
+        self.nameDrawable.Visible = false
+        self.distanceDrawable.Visible = false
+        return
     end
     
-    return onScreen and {
-        minX = minX,
-        minY = minY,
-        maxX = maxX,
-        maxY = maxY
-    }
-end
-
-local config = {
-    boxEnabled = true,
-    boxColor = Color3New(1, 0, 0),
-    healthBarEnabled = true,
-    nameEnabled = true
-}
-
--- Optimized update function
-function ESP:Update()
-    if not self.enabled then return end
+    if not self.instance or not self.instance.Parent then
+        self:Destroy()
+        return
+    end
     
-    local currentTime = tick()
-    for character, object in pairs(self.objects) do
-        -- Update at most 60 times per second per object
-        if currentTime - object.lastUpdate >= 0.016 then
-            if character.Parent then
-                local cf = character:GetPivot()
-                local bounds = self:CalculateBounds(cf, character:GetExtentsSize())
-                
-                if bounds then
-                    object.box:Update(bounds, config)
-                    object.healthBar:Update(character, bounds, config)
-                    object.nameTag:Update(character, bounds, config)
-                else
-                    object.box:SetVisible(false)
-                    object.healthBar:SetVisible(false)
-                    object.nameTag:SetVisible(false)
-                end
-            else
-                self:RemoveObject(character)
-            end
-            object.lastUpdate = currentTime
-        end
+    local position, visible = Camera:WorldToViewportPoint(self.instance.Position)
+    if not visible then
+        self.nameDrawable.Visible = false
+        self.distanceDrawable.Visible = false
+        return
     end
+    
+    local distance = (Camera.CFrame.Position - self.instance.Position).Magnitude
+    self.nameDrawable.Text = self.instance.Name
+    self.distanceDrawable.Text = string.format("[%d studs]", MathFloor(distance))
+    
+    self.nameDrawable.Position = Vector2New(position.X, position.Y)
+    self.distanceDrawable.Position = Vector2New(position.X, position.Y + self.nameDrawable.TextBounds.Y + 2)
+    
+    self.nameDrawable.Visible = true
+    self.distanceDrawable.Visible = true
 end
 
--- Connection management
-function ESP:Toggle(enabled)
-    self.enabled = enabled
-    if not enabled then
-        for _, object in pairs(self.objects) do
-            object.box:SetVisible(false)
-            object.healthBar:SetVisible(false)
-            object.nameTag:SetVisible(false)
-        end
-    end
+function PartESPObject:Destroy()
+    self.connection:Disconnect()
+    self.nameDrawable:Remove()
+    self.distanceDrawable:Remove()
 end
 
--- Initialize the ESP system
-local esp = ESP.new()
+function PartESP.AddInstance(instance, options)
+    return PartESPObject.new(instance, options or {})
+end
 
--- Connect to RenderStepped with throttling
-local lastUpdate = 0
-RunService.RenderStepped:Connect(function()
-    local now = tick()
-    if now - lastUpdate >= 0.016 then  -- Cap at ~60 FPS
-        esp:Update()
-        lastUpdate = now
-    end
-end)
+ESP.PartESP = PartESP
 
-return esp
+return ESP
