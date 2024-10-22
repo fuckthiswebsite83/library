@@ -41,12 +41,47 @@ local function NewDrawing(type, properties)
     return drawing
 end
 
-local function NewCham(properties)
-    local cham = Instance.new("Highlight", game.CoreGui)
-    for prop, value in pairs(properties or {}) do
-        cham[prop] = value
+local function UpdateChams(plr, config)
+    local Chams = Instance.new("Highlight")
+    Chams.FillTransparency = 1
+    Chams.OutlineTransparency = 0
+    Chams.OutlineColor = Color3.fromRGB(119, 120, 255)
+    Chams.DepthMode = "AlwaysOnTop"
+    
+    local function Update()
+        if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+            local HRP = plr.Character.HumanoidRootPart
+            local Humanoid = plr.Character:WaitForChild("Humanoid")
+            local Pos, OnScreen = Camera:WorldToScreenPoint(HRP.Position)
+            local Dist = (Camera.CFrame.Position - HRP.Position).Magnitude / 3.5714285714
+            
+            if OnScreen and Dist <= config.MaxDistance then
+                Chams.Adornee = plr.Character
+                Chams.Enabled = config.Drawing.Chams.Enabled
+                Chams.FillColor = config.Drawing.Chams.FillRGB
+                Chams.OutlineColor = config.Drawing.Chams.OutlineRGB
+                
+                if config.Drawing.Chams.Thermal then
+                    local breathe_effect = math.atan(math.sin(tick() * 2)) * 2 / math.pi
+                    Chams.FillTransparency = config.Drawing.Chams.Fill_Transparency * breathe_effect * 0.01
+                    Chams.OutlineTransparency = config.Drawing.Chams.Outline_Transparency * breathe_effect * 0.01
+                end
+                
+                if config.Drawing.Chams.VisibleCheck then
+                    Chams.DepthMode = "Occluded"
+                else
+                    Chams.DepthMode = "AlwaysOnTop"
+                end
+            else
+                Chams.Enabled = false
+            end
+        else
+            Chams.Enabled = false
+        end
     end
-    return cham
+    
+    RunService.RenderStepped:Connect(Update)
+    return Chams
 end
 
 local Box = setmetatable({}, ESPComponent)
@@ -239,14 +274,20 @@ Cham.__index = Cham
 
 function Cham.new(chamColor, chamThickness, chamTransparency, wallCheck, outlineColor, outlineTransparency)
     local self = setmetatable({}, Cham)
-    self.drawable = NewCham({
-        FillColor = chamColor or Color3New(0, 0, 1),
-        OutlineColor = outlineColor or Color3New(1, 1, 1),
-        OutlineTransparency = outlineTransparency or 0.5,
-        FillTransparency = chamTransparency or 0.5,
-        Enabled = false
+    self.drawable = UpdateChams(self, {
+        MaxDistance = 200,
+        Drawing = {
+            Chams = {
+                Enabled = true,
+                Thermal = true,
+                FillRGB = chamColor or Color3New(0, 0, 1),
+                Fill_Transparency = chamTransparency or 0.5,
+                OutlineRGB = outlineColor or Color3New(1, 1, 1),
+                Outline_Transparency = outlineTransparency or 0.5,
+                VisibleCheck = wallCheck or false,
+            }
+        }
     })
-    self.wallCheck = wallCheck or false
     return self
 end
 
