@@ -46,17 +46,21 @@ function Box:Update(character)
         return
     end
 
-    local rootPos, onScreen = workspace.CurrentCamera:WorldToViewportPoint(rootPart.Position)
-    if onScreen then
-        local headPos = workspace.CurrentCamera:WorldToViewportPoint(head.Position)
-        local legPos = workspace.CurrentCamera:WorldToViewportPoint(rootPart.Position - Vector3.new(0, 3, 0))
-        self.box.Size = Vector2.new(1000 / rootPos.Z + 20, headPos.Y - legPos.Y) -- Make the box wider
-        self.box.Position = Vector2.new(rootPos.X - self.box.Size.X / 2, rootPos.Y - self.box.Size.Y / 2)
+    local headPos, headOnScreen = workspace.CurrentCamera:WorldToViewportPoint(head.Position)
+    local rootPos, rootOnScreen = workspace.CurrentCamera:WorldToViewportPoint(rootPart.Position)
+    local legPos, legOnScreen = workspace.CurrentCamera:WorldToViewportPoint(rootPart.Position - Vector3.new(0, 3, 0))
+
+    if headOnScreen and rootOnScreen and legOnScreen then
+        local boxHeight = headPos.Y - legPos.Y
+        local boxWidth = boxHeight / 3
+
+        self.box.Size = Vector2.new(boxWidth, boxHeight)
+        self.box.Position = Vector2.new(rootPos.X - boxWidth / 2, headPos.Y - boxHeight / 2)
         self.box.Visible = true
 
         local healthPercent = humanoid.Health / humanoid.MaxHealth
-        self.healthBar.Size = Vector2.new(5, (headPos.Y - legPos.Y) * healthPercent)
-        self.healthBar.Position = Vector2.new(self.box.Position.X - 10, self.box.Position.Y + (headPos.Y - legPos.Y) * (1 - healthPercent))
+        self.healthBar.Size = Vector2.new(5, boxHeight * healthPercent)
+        self.healthBar.Position = Vector2.new(self.box.Position.X - 10, self.box.Position.Y + boxHeight * (1 - healthPercent))
         self.healthBar.Visible = true
     else
         self.box.Visible = false
