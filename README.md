@@ -1,8 +1,6 @@
 
 # ESP Library Documentation
 
-This library provides various components for creating and managing ESP (Extra Sensory Perception) elements, commonly used in game development for rendering things like boxes, health bars, name tags, distance markers, and more.
-
 ## ESPComponent
 Base class for all ESP components.
 
