@@ -4,7 +4,6 @@ ESP.__index = ESP
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 
--- Base class for all ESP elements
 local ESPComponent = {}
 ESPComponent.__index = ESPComponent
 
@@ -16,18 +15,17 @@ function ESPComponent:Destroy()
     self.drawable:Remove()
 end
 
--- Box Component
 local Box = setmetatable({}, ESPComponent)
 Box.__index = Box
 
-function Box.new()
+function Box.new(config)
     local self = setmetatable({}, Box)
     self.drawable = Drawing.new("Square")
     self.drawable.Visible = false
-    self.drawable.Color = Color3.new(1, 0, 0)
-    self.drawable.Thickness = 2
-    self.drawable.Transparency = 1
-    self.drawable.Filled = false
+    self.drawable.Color = config.boxColor or Color3.new(1, 0, 0)
+    self.drawable.Thickness = config.boxThickness or 2
+    self.drawable.Transparency = config.boxTransparency or 1
+    self.drawable.Filled = config.boxFilled or false
     return self
 end
 
@@ -42,18 +40,17 @@ function Box:Update(character, bounds)
     self.drawable.Visible = true
 end
 
--- HealthBar Component
 local HealthBar = setmetatable({}, ESPComponent)
 HealthBar.__index = HealthBar
 
-function HealthBar.new()
+function HealthBar.new(config)
     local self = setmetatable({}, HealthBar)
     self.drawable = Drawing.new("Square")
     self.drawable.Visible = false
-    self.drawable.Color = Color3.new(0, 1, 0)
-    self.drawable.Thickness = 1
-    self.drawable.Transparency = 1
-    self.drawable.Filled = true
+    self.drawable.Color = config.healthBarColor or Color3.new(0, 1, 0)
+    self.drawable.Thickness = config.healthBarThickness or 1
+    self.drawable.Transparency = config.healthBarTransparency or 1
+    self.drawable.Filled = config.healthBarFilled or true
     return self
 end
 
@@ -76,19 +73,18 @@ function HealthBar:Update(character, bounds)
     self.drawable.Visible = true
 end
 
--- NameTag Component
 local NameTag = setmetatable({}, ESPComponent)
 NameTag.__index = NameTag
 
-function NameTag.new()
+function NameTag.new(config)
     local self = setmetatable({}, NameTag)
     self.drawable = Drawing.new("Text")
     self.drawable.Visible = false
-    self.drawable.Color = Color3.new(1, 1, 1)
-    self.drawable.Size = 16
-    self.drawable.Center = true
-    self.drawable.Outline = true
-    self.drawable.OutlineColor = Color3.new(0, 0, 0)
+    self.drawable.Color = config.nameTagColor or Color3.new(1, 1, 1)
+    self.drawable.Size = config.nameTagSize or 16
+    self.drawable.Center = config.nameTagCenter or true
+    self.drawable.Outline = config.nameTagOutline or true
+    self.drawable.OutlineColor = config.nameTagOutlineColor or Color3.new(0, 0, 0)
     return self
 end
 
@@ -109,19 +105,18 @@ function NameTag:Update(character, bounds)
     self.drawable.Visible = true
 end
 
--- Distance Component
 local Distance = setmetatable({}, ESPComponent)
 Distance.__index = Distance
 
-function Distance.new()
+function Distance.new(config)
     local self = setmetatable({}, Distance)
     self.drawable = Drawing.new("Text")
     self.drawable.Visible = false
-    self.drawable.Color = Color3.new(1, 1, 1)
-    self.drawable.Size = 16
-    self.drawable.Center = true
-    self.drawable.Outline = true
-    self.drawable.OutlineColor = Color3.new(0, 0, 0)
+    self.drawable.Color = config.distanceColor or Color3.new(1, 1, 1)
+    self.drawable.Size = config.distanceSize or 16
+    self.drawable.Center = config.distanceCenter or true
+    self.drawable.Outline = config.distanceOutline or true
+    self.drawable.OutlineColor = config.distanceOutlineColor or Color3.new(0, 0, 0)
     return self
 end
 
@@ -149,16 +144,16 @@ function Distance:Update(character, bounds)
     self.drawable.Visible = true
 end
 
--- Main ESP Handler
 local ESPObject = {}
 ESPObject.__index = ESPObject
 
-function ESPObject.new()
+function ESPObject.new(config)
     local self = setmetatable({}, ESPObject)
-    self.box = Box.new()
-    self.healthBar = HealthBar.new()
-    self.nameTag = NameTag.new()
-    self.distance = Distance.new()
+    self.config = config
+    self.box = Box.new(config)
+    self.healthBar = HealthBar.new(config)
+    self.nameTag = NameTag.new(config)
+    self.distance = Distance.new(config)
     return self
 end
 
