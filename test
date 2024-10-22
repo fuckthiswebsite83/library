@@ -26,41 +26,57 @@ end
 
 function Box:Update(character)
     local head = character:FindFirstChild("Head")
-    if not head then
-        self.box.Visible = false
-        self.healthBar.Visible = false
-        return
-    end
-
     local rootPart = character:FindFirstChild("HumanoidRootPart")
-    if not rootPart then
-        self.box.Visible = false
-        self.healthBar.Visible = false
-        return
-    end
-
     local humanoid = character:FindFirstChildOfClass("Humanoid")
-    if not humanoid then
+    
+    if not (head and rootPart and humanoid) then
         self.box.Visible = false
         self.healthBar.Visible = false
         return
     end
 
-    local headPos, headOnScreen = workspace.CurrentCamera:WorldToViewportPoint(head.Position)
-    local rootPos, rootOnScreen = workspace.CurrentCamera:WorldToViewportPoint(rootPart.Position)
-    local legPos, legOnScreen = workspace.CurrentCamera:WorldToViewportPoint(rootPart.Position - Vector3.new(0, 3, 0))
-
-    if headOnScreen and rootOnScreen and legOnScreen then
-        local boxHeight = headPos.Y - legPos.Y
-        local boxWidth = boxHeight / 2
+    local camera = workspace.CurrentCamera
+    
+    local cornerPoints = {
+        rootPart.Position + Vector3.new(2, 3, 2),  -- Top Right Front
+        rootPart.Position + Vector3.new(-2, 3, 2),  -- Top Left Front
+        rootPart.Position + Vector3.new(-2, -3, 2),  -- Bottom Left Front
+        rootPart.Position + Vector3.new(2, -3, 2),  -- Bottom Right Front
+        rootPart.Position + Vector3.new(2, 3, -2),  -- Top Right Back
+        rootPart.Position + Vector3.new(-2, 3, -2),  -- Top Left Back
+        rootPart.Position + Vector3.new(-2, -3, -2),  -- Bottom Left Back
+        rootPart.Position + Vector3.new(2, -3, -2),  -- Bottom Right Back
+    }
+    
+    local screenPoints = {}
+    local onScreen = true
+    local minX, minY = math.huge, math.huge
+    local maxX, maxY = -math.huge, -math.huge
+    
+    for _, point in ipairs(cornerPoints) do
+        local screenPoint, visible = camera:WorldToViewportPoint(point)
+        if not visible then
+            onScreen = false
+            break
+        end
+        
+        minX = math.min(minX, screenPoint.X)
+        minY = math.min(minY, screenPoint.Y)
+        maxX = math.max(maxX, screenPoint.X)
+        maxY = math.max(maxY, screenPoint.Y)
+    end
+    
+    if onScreen then
+        local boxWidth = maxX - minX
+        local boxHeight = maxY - minY
 
         self.box.Size = Vector2.new(boxWidth, boxHeight)
-        self.box.Position = Vector2.new(rootPos.X - boxWidth / 2, headPos.Y - boxHeight / 2)
+        self.box.Position = Vector2.new(minX, minY)
         self.box.Visible = true
-
+        
         local healthPercent = humanoid.Health / humanoid.MaxHealth
         self.healthBar.Size = Vector2.new(5, boxHeight * healthPercent)
-        self.healthBar.Position = Vector2.new(self.box.Position.X - 10, self.box.Position.Y + boxHeight * (1 - healthPercent))
+        self.healthBar.Position = Vector2.new(minX - 10, minY + boxHeight * (1 - healthPercent))
         self.healthBar.Visible = true
     else
         self.box.Visible = false
