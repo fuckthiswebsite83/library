@@ -70,7 +70,7 @@ function Box.new(boxColor, boxThickness, boxTransparency, boxFilled, fillColor, 
     return self
 end
 
-function Box:Update(bounds, config)
+function Box:Update(character, bounds, config)
     if not (bounds and config.boxEnabled) then
         self:SetVisible(false)
         self.fillDrawable.Visible = false
@@ -92,6 +92,16 @@ function Box:Update(bounds, config)
     else
         self.fillDrawable.Visible = false
     end
+end
+
+function Box:SetVisible(visible)
+    self.drawable.Visible = visible
+    self.fillDrawable.Visible = visible and self.fillDrawable.Visible
+end
+
+function Box:Destroy()
+    self.drawable:Remove()
+    self.fillDrawable:Remove()
 end
 
 local HealthBar = setmetatable({}, ESPComponent)
@@ -228,7 +238,7 @@ function Cham.new(chamColor, chamThickness, chamTransparency, wallCheck, outline
     return self
 end
 
-function Cham:Update(character, config)
+function Cham:Update(character, bounds, config)
     if not config.chamEnabled then
         self:SetVisible(false)
         return
@@ -263,11 +273,11 @@ function ESPObject:Update(character, config)
         return
     end
 
-    self.box:Update(bounds, config)
+    self.box:Update(character, bounds, config)
     self.healthBar:Update(character, bounds, config)
     self.nameTag:Update(character, bounds, config)
     self.distance:Update(character, bounds, config)
-    self.cham:Update(character, config)
+    self.cham:Update(character, bounds, config)
 end
 
 function ESPObject:CalculateBounds(character)
