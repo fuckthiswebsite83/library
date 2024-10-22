@@ -170,11 +170,12 @@ end
 local NameTag = setmetatable({}, ESPComponent)
 NameTag.__index = NameTag
 
-function NameTag.new(nameTagColor, nameTagCenter, nameTagOutline, nameTagOutlineColor)
+function NameTag.new(nameTagColor, nameTagSize, nameTagCenter, nameTagOutline, nameTagOutlineColor)
     local self = setmetatable({}, NameTag)
     self.drawable = NewDrawing("Text", {
         Visible = false,
         Color = nameTagColor or Color3New(1, 1, 1),
+        Size = nameTagSize or 16,
         Center = nameTagCenter or true,
         Outline = nameTagOutline or true,
         OutlineColor = nameTagOutlineColor or Color3New(0, 0, 0)
@@ -202,11 +203,12 @@ end
 local Distance = setmetatable({}, ESPComponent)
 Distance.__index = Distance
 
-function Distance.new(distanceColor, distanceCenter, distanceOutline, distanceOutlineColor)
+function Distance.new(distanceColor, distanceSize, distanceCenter, distanceOutline, distanceOutlineColor)
     local self = setmetatable({}, Distance)
     self.drawable = NewDrawing("Text", {
         Visible = false,
         Color = distanceColor or Color3New(1, 1, 1),
+        Size = distanceSize or 16,
         Center = distanceCenter or true,
         Outline = distanceOutline or true,
         OutlineColor = distanceOutlineColor or Color3New(0, 0, 0)
@@ -261,12 +263,12 @@ end
 local ESPObject = {}
 ESPObject.__index = ESPObject
 
-function ESPObject.new(boxColor, boxThickness, boxTransparency, boxFilled, boxFillColor, boxFillTransparency, healthBarColor, healthBarThickness, healthBarTransparency, healthBarFilled, nameTagColor, nameTagCenter, nameTagOutline, nameTagOutlineColor, distanceColor, distanceCenter, distanceOutline, distanceOutlineColor, chamColor, chamThickness, chamTransparency, wallCheck, outlineColor, outlineTransparency)
+function ESPObject.new(boxColor, boxThickness, boxTransparency, boxFilled, boxFillColor, boxFillTransparency, healthBarColor, healthBarThickness, healthBarTransparency, healthBarFilled, nameTagColor, nameTagSize, nameTagCenter, nameTagOutline, nameTagOutlineColor, distanceColor, distanceSize, distanceCenter, distanceOutline, distanceOutlineColor, chamColor, chamThickness, chamTransparency, wallCheck, outlineColor, outlineTransparency)
     local self = setmetatable({}, ESPObject)
     self.box = Box.new(boxColor, boxThickness, boxTransparency, boxFilled, boxFillColor, boxFillTransparency)
     self.healthBar = HealthBar.new(healthBarColor, healthBarThickness, healthBarTransparency, healthBarFilled)
-    self.nameTag = NameTag.new(nameTagColor, nameTagCenter, nameTagOutline, nameTagOutlineColor)
-    self.distance = Distance.new(distanceColor, distanceCenter, distanceOutline, distanceOutlineColor)
+    self.nameTag = NameTag.new(nameTagColor, nameTagSize, nameTagCenter, nameTagOutline, nameTagOutlineColor)
+    self.distance = Distance.new(distanceColor, distanceSize, distanceCenter, distanceOutline, distanceOutlineColor)
     self.cham = Cham.new(chamColor, chamThickness, chamTransparency, wallCheck, outlineColor, outlineTransparency)
     return self
 end
@@ -385,7 +387,9 @@ function PartESPObject.new(instance, options)
         text = options.text or "{name}",
         textColor = options.textColor or {Color3New(1,1,1), 1},
         textOutline = options.textOutline ~= false,
-        textOutlineColor = options.textOutlineColor or Color3New()
+        textOutlineColor = options.textOutlineColor or Color3New(),
+        textSize = options.textSize or 13,
+        textFont = options.textFont or 2
     }
     
     self.nameDrawable = DrawingNew("Text")
@@ -404,6 +408,7 @@ function PartESPObject:UpdateDrawables()
     self.nameDrawable.Color = self.options.textColor[1]
     self.nameDrawable.Transparency = self.options.textColor[2]
     self.nameDrawable.Size = self.options.textSize
+    self.nameDrawable.Font = self.options.textFont
     self.nameDrawable.Center = true
     self.nameDrawable.Outline = self.options.textOutline
     self.nameDrawable.OutlineColor = self.options.textOutlineColor
@@ -412,6 +417,7 @@ function PartESPObject:UpdateDrawables()
     self.distanceDrawable.Color = self.options.textColor[1]
     self.distanceDrawable.Transparency = self.options.textColor[2]
     self.distanceDrawable.Size = self.options.textSize
+    self.distanceDrawable.Font = self.options.textFont
     self.distanceDrawable.Center = true
     self.distanceDrawable.Outline = self.options.textOutline
     self.distanceDrawable.OutlineColor = self.options.textOutlineColor
