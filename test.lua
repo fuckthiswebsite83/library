@@ -87,27 +87,18 @@ function HealthBar.new(healthBarColor, healthBarThickness, healthBarTransparency
         Transparency = healthBarTransparency or 1,
         Filled = healthBarFilled or true
     })
-    self.outline = NewDrawing("Square", {
-        Visible = false,
-        Color = Color3New(0, 0, 0),
-        Thickness = healthBarThickness or 1,
-        Transparency = healthBarTransparency or 1,
-        Filled = false
-    })
     return self
 end
 
 function HealthBar:Update(character, bounds, config)
     if not (bounds and config.healthBarEnabled) then
         self:SetVisible(false)
-        self.outline.Visible = false
         return
     end
     
     local humanoid = character:FindFirstChildOfClass("Humanoid")
     if not humanoid then
         self:SetVisible(false)
-        self.outline.Visible = false
         return
     end
     
@@ -121,10 +112,6 @@ function HealthBar:Update(character, bounds, config)
     self.drawable.Size = Vector2New(5, boxHeight * healthPercent)
     self.drawable.Position = Vector2New(bounds.minX - 10, bounds.minY + boxHeight * (1 - healthPercent))
     self:SetVisible(true)
-    
-    self.outline.Size = Vector2New(5, boxHeight)
-    self.outline.Position = Vector2New(bounds.minX - 10, bounds.minY)
-    self.outline.Visible = true
 end
 
 local NameTag = setmetatable({}, ESPComponent)
@@ -291,7 +278,6 @@ end
 function ESPObject:SetVisible(visible)
     self.box:SetVisible(visible)
     self.healthBar:SetVisible(visible)
-    self.healthBar.outline.Visible = visible
     self.nameTag:SetVisible(visible)
     self.distance:SetVisible(visible)
     self.cham:SetVisible(visible)
@@ -300,7 +286,6 @@ end
 function ESPObject:Destroy()
     self.box:Destroy()
     self.healthBar:Destroy()
-    self.healthBar.outline:Remove()
     self.nameTag:Destroy()
     self.distance:Destroy()
     self.cham:Destroy()
