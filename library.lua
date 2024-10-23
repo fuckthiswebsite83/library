@@ -206,11 +206,12 @@ function HealthBar:Update(character, bounds, config)
     local humanoid = character:FindFirstChildOfClass("Humanoid")
     local health, maxHealth
 
+    -- Check for custom health value in Stats folder only if the game ID is 863266079
     if game.PlaceId == 863266079 then
         local player = Players:GetPlayerFromCharacter(character)
         if player and player:FindFirstChild("Stats") and player.Stats:FindFirstChild("Health") then
             health = player.Stats.Health.Value
-            maxHealth = player.Stats.Health.MaxValue or 100
+            maxHealth = player.Stats.Health.MaxValue or 100 -- Assuming max health is 100 if not specified
         elseif humanoid then
             health = humanoid.Health
             maxHealth = humanoid.MaxHealth
@@ -330,13 +331,13 @@ function Cham:Update(character, bounds, config)
         self.drawable.OutlineColor = color
     else
         self.drawable.FillColor = config.chamColor
-        self.drawable.OutlineColor = config.chamsOutline
+        self.drawable.OutlineColor = config.outlineColor
     end
 
     if config.thermalEnabled then
         local breathe_effect = math.atan(math.sin(tick() * 2)) * 2 / math.pi
         self.drawable.FillTransparency = config.chamTransparency * breathe_effect * 0.01
-        self.drawable.OutlineTransparency = config.chamsOutlineTransparency * breathe_effect * 0.01
+        self.drawable.OutlineTransparency = config.outlineTransparency * breathe_effect * 0.01
     end
 
     if config.glowEnabled then
