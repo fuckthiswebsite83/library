@@ -137,19 +137,26 @@ HealthBar.__index = HealthBar
 
 function HealthBar.new(healthBarColor, healthBarThickness, healthBarTransparency, healthBarFilled)
     local self = setmetatable({}, HealthBar)
-    self.drawable = NewDrawing("Square", {
-        Visible = false,
-        Color = healthBarColor or Color3New(0, 1, 0),
-        Thickness = healthBarThickness or 1,
-        Transparency = healthBarTransparency or 1,
-        Filled = healthBarFilled or true
+    self.drawable = Functions:Create("Frame", {
+        BackgroundColor3 = healthBarColor or Color3New(0, 1, 0),
+        BackgroundTransparency = healthBarTransparency or 0,
+        Size = UDim2.new(0, 5, 0, 50),
+        Parent = CoreGui
     })
-    self.outline = NewDrawing("Square", {
-        Visible = false,
-        Color = Color3New(0, 0, 0),
-        Thickness = healthBarThickness or 1,
-        Transparency = healthBarTransparency or 1,
-        Filled = false
+    self.gradient = Functions:Create("UIGradient", {
+        Parent = self.drawable,
+        Rotation = -90,
+        Color = ColorSequence.new{
+            ColorSequenceKeypoint.new(0, Color3New(1, 0, 0)),
+            ColorSequenceKeypoint.new(0.5, Color3New(1, 1, 0)),
+            ColorSequenceKeypoint.new(1, Color3New(0, 1, 0))
+        }
+    })
+    self.outline = Functions:Create("Frame", {
+        BackgroundColor3 = Color3New(0, 0, 0),
+        BackgroundTransparency = healthBarTransparency or 0,
+        Size = UDim2.new(0, 7, 0, 52),
+        Parent = CoreGui
     })
     return self
 end
@@ -171,16 +178,23 @@ function HealthBar:Update(character, bounds, config)
     local healthPercent = humanoid.Health / humanoid.MaxHealth
     local boxHeight = bounds.maxY - bounds.minY
     
-    local healthColor = Color3New(1 - healthPercent, healthPercent, 0)
-    self.drawable.Color = healthColor
-    
-    self.drawable.Size = Vector2New(5, boxHeight * healthPercent)
-    self.drawable.Position = Vector2New(bounds.minX - 10, bounds.minY + boxHeight * (1 - healthPercent))
+    self.drawable.Size = UDim2.new(0, 5, 0, boxHeight * healthPercent)
+    self.drawable.Position = UDim2.new(0, bounds.minX - 10, 0, bounds.minY + boxHeight * (1 - healthPercent))
     self:SetVisible(true)
     
-    self.outline.Size = Vector2New(5, boxHeight)
-    self.outline.Position = Vector2New(bounds.minX - 10, bounds.minY)
+    self.outline.Size = UDim2.new(0, 7, 0, boxHeight)
+    self.outline.Position = UDim2.new(0, bounds.minX - 11, 0, bounds.minY)
     self.outline.Visible = true
+end
+
+function HealthBar:SetVisible(visible)
+    self.drawable.Visible = visible
+    self.outline.Visible = visible
+end
+
+function HealthBar:Destroy()
+    self.drawable:Destroy()
+    self.outline:Destroy()
 end
 
 local NameTag = setmetatable({}, ESPComponent)
