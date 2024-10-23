@@ -323,33 +323,17 @@ function ESPObject:CalculateBounds(character)
     local hrp = character:FindFirstChild("HumanoidRootPart")
     if not hrp then return nil end
 
-    local fixedWidth = 4
-    local fixedHeight = 7
+    local fixedWidth = 50
+    local fixedHeight = 100
+
     local cf = hrp.CFrame
+    local screenPoint, visible = Camera:WorldToViewportPoint(cf.Position)
+    if not visible then return nil end
 
-    local corners = {
-        cf * Vector3New(fixedWidth/2, fixedHeight/2, 0),
-        cf * Vector3New(-fixedWidth/2, fixedHeight/2, 0),
-        cf * Vector3New(-fixedWidth/2, -fixedHeight/2, 0),
-        cf * Vector3New(fixedWidth/2, -fixedHeight/2, 0)
-    }
-
-    local minX, minY = math.huge, math.huge
-    local maxX, maxY = -math.huge, -math.huge
-    local onScreen = false
-    
-    for _, corner in ipairs(corners) do
-        local screenPoint, visible = Camera:WorldToViewportPoint(corner)
-        if visible then
-            onScreen = true
-            minX = math.min(minX, screenPoint.X)
-            minY = math.min(minY, screenPoint.Y)
-            maxX = math.max(maxX, screenPoint.X)
-            maxY = math.max(maxY, screenPoint.Y)
-        end
-    end
-    
-    if not onScreen then return nil end
+    local minX = screenPoint.X - fixedWidth / 2
+    local minY = screenPoint.Y - fixedHeight / 2
+    local maxX = screenPoint.X + fixedWidth / 2
+    local maxY = screenPoint.Y + fixedHeight / 2
 
     return {
         minX = minX,
