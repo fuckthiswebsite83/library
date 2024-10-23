@@ -27,22 +27,6 @@ do
         end
         return _Instance
     end
-
-    function Functions:FadeOutOnDist(element, distance, maxDistance)
-        local transparency = math.max(0.1, 1 - (distance / maxDistance))
-        if element:IsA("TextLabel") then
-            element.TextTransparency = 1 - transparency
-        elseif element:IsA("ImageLabel") then
-            element.ImageTransparency = 1 - transparency
-        elseif element:IsA("UIStroke") then
-            element.Transparency = 1 - transparency
-        elseif element:IsA("Frame") then
-            element.BackgroundTransparency = 1 - transparency
-        elseif element:IsA("Highlight") then
-            element.FillTransparency = 1 - transparency
-            element.OutlineTransparency = 1 - transparency
-        end
-    end
 end
 
 function ESPComponent:SetVisible(visible)
@@ -265,6 +249,8 @@ function Cham.new(chamColor, chamTransparency, outlineColor, outlineTransparency
     })
     self.rainbow = rainbow or false
     self.pulse = pulse or false
+    self.baseFillTransparency = chamTransparency or 0.5
+    self.baseOutlineTransparency = outlineTransparency or 0.5
     return self
 end
 
@@ -286,8 +272,8 @@ function Cham:Update(character, bounds, config)
         
         if self.pulse then
             local fade_in_out = 0.5 + 0.5 * math.sin(tick() * 2)
-            self.drawable.FillTransparency = 0.5 * fade_in_out
-            self.drawable.OutlineTransparency = 0.5 * fade_in_out
+            self.drawable.FillTransparency = self.baseFillTransparency * fade_in_out
+            self.drawable.OutlineTransparency = self.baseOutlineTransparency * fade_in_out
         end
 
         self:SetVisible(true)
