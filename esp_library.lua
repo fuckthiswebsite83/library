@@ -1,6 +1,7 @@
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
+local CoreGui = game:GetService("CoreGui")
 
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
@@ -16,6 +17,33 @@ ESP.__index = ESP
 
 local ESPComponent = {}
 ESPComponent.__index = ESPComponent
+
+local Functions = {}
+do
+    function Functions:Create(Class, Properties)
+        local _Instance = typeof(Class) == 'string' and Instance.new(Class) or Class
+        for Property, Value in pairs(Properties) do
+            _Instance[Property] = Value
+        end
+        return _Instance
+    end
+
+    function Functions:FadeOutOnDist(element, distance, maxDistance)
+        local transparency = math.max(0.1, 1 - (distance / maxDistance))
+        if element:IsA("TextLabel") then
+            element.TextTransparency = 1 - transparency
+        elseif element:IsA("ImageLabel") then
+            element.ImageTransparency = 1 - transparency
+        elseif element:IsA("UIStroke") then
+            element.Transparency = 1 - transparency
+        elseif element:IsA("Frame") then
+            element.BackgroundTransparency = 1 - transparency
+        elseif element:IsA("Highlight") then
+            element.FillTransparency = 1 - transparency
+            element.OutlineTransparency = 1 - transparency
+        end
+    end
+end
 
 function ESPComponent:SetVisible(visible)
     if typeof(self.drawable) == "Instance" and self.drawable:IsA("Highlight") then
@@ -42,7 +70,7 @@ local function NewDrawing(type, properties)
 end
 
 local function NewCham(properties)
-    local cham = Instance.new("Highlight", game.CoreGui)
+    local cham = Functions:Create("Highlight", {Parent = CoreGui})
     for prop, value in pairs(properties or {}) do
         cham[prop] = value
     end
@@ -371,6 +399,7 @@ end
 
 ESP.Object = ESPObject
 
+--[[]
 local PartESP = {}
 PartESP.__index = PartESP
 
@@ -482,5 +511,6 @@ end
 PartESP.objects = {}
 
 ESP.PartESP = PartESP
+--]]
 
 return ESP
