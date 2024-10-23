@@ -69,12 +69,97 @@ local function NewDrawing(type, properties)
     return drawing
 end
 
-local function NewCham(properties)
-    local cham = Functions:Create("Highlight", {Parent = CoreGui})
-    for prop, value in pairs(properties or {}) do
-        cham[prop] = value
+local function create_instance(class, properties)
+    local instance = typeof(class) == 'string' and Instance.new(class) or class
+    for property, value in pairs(properties) do
+        instance[property] = value
     end
-    return cham
+    return instance
+end
+
+local function load_chams()
+    local screen_gui = create_instance("ScreenGui", {
+        Parent = CoreGui,
+        Name = "chams_holder",
+    })
+
+    local function create_chams(player)
+        local chams = create_instance("Highlight", {
+            Parent = screen_gui,
+            FillTransparency = 1,
+            OutlineTransparency = 0,
+            OutlineColor = Color3.fromRGB(119, 120, 255),
+            DepthMode = "AlwaysOnTop"
+        })
+
+        local function update_chams()
+            local connection
+            local function hide_chams()
+                chams.Enabled = false
+                if not player then
+                    screen_gui:Destroy()
+                    connection:Disconnect()
+                end
+            end
+
+            connection = RunService.RenderStepped:Connect(function()
+                if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                    local hrp = player.Character.HumanoidRootPart
+                    local pos, on_screen = Workspace.CurrentCamera:WorldToScreenPoint(hrp.Position)
+                    local dist = (Workspace.CurrentCamera.CFrame.Position - hrp.Position).Magnitude / 3.5714285714
+
+                    if on_screen and dist <= 9999 then
+                        chams.Adornee = player.Character
+                        chams.Enabled = true
+
+                        if true then -- Replace with your condition for color cycling
+                            local hue = tick() % 5 / 5
+                            local color = Color3.fromHSV(hue, 1, 1)
+                            chams.FillColor = color
+                            chams.OutlineColor = color
+                        else
+                            chams.FillColor = Color3.fromRGB(119, 120, 255)
+                            chams.OutlineColor = Color3.fromRGB(119, 120, 255)
+                        end
+
+                        if true then -- Replace with your condition for cycling
+                            local fade_in_out = 0.5 + 0.5 * math.sin(tick() * 2)
+                            chams.FillTransparency = 100 * fade_in_out * 0.01
+                            chams.OutlineTransparency = 100 * fade_in_out * 0.01
+                        end
+
+                        if true then -- Replace with your condition for glow
+                            chams.OutlineTransparency = 0.5
+                        end
+
+                        if true then -- Replace with your condition for wall check
+                            chams.DepthMode = "Occluded"
+                        else
+                            chams.DepthMode = "AlwaysOnTop"
+                        end
+                    else
+                        hide_chams()
+                    end
+                else
+                    hide_chams()
+                end
+            end)
+        end
+
+        coroutine.wrap(update_chams)()
+    end
+
+    local function setup_player_chams(player)
+        if player.Name ~= Players.LocalPlayer.Name then
+            coroutine.wrap(create_chams)(player)
+        end
+    end
+
+    for _, player in pairs(Players:GetPlayers()) do
+        setup_player_chams(player)
+    end
+
+    Players.PlayerAdded:Connect(setup_player_chams)
 end
 
 local Box = setmetatable({}, ESPComponent)
@@ -255,7 +340,8 @@ Cham.__index = Cham
 
 function Cham.new(chamColor, chamThickness, chamTransparency, wallCheck, outlineColor, outlineTransparency)
     local self = setmetatable({}, Cham)
-    self.drawable = NewCham({
+    self.drawable = create_instance("Highlight", {
+        Parent = CoreGui,
         FillColor = chamColor or Color3New(0, 0, 1),
         OutlineColor = outlineColor or Color3New(1, 1, 1),
         OutlineTransparency = outlineTransparency or 0.5,
@@ -386,5 +472,8 @@ function ESPObject:Destroy()
 end
 
 ESP.Object = ESPObject
+
+-- Initialize chams for all players
+load_chams()
 
 return ESP
