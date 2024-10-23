@@ -322,19 +322,53 @@ end
 function ESPObject:CalculateBounds(character)
     local hrp = character:FindFirstChild("HumanoidRootPart")
     if not hrp then return nil end
-
-    local fixedWidth = 50
-    local fixedHeight = 100
-
+    local size = Vector3New(2, 5, 2)
     local cf = hrp.CFrame
-    local screenPoint, visible = Camera:WorldToViewportPoint(cf.Position)
-    if not visible then return nil end
 
-    local minX = screenPoint.X - fixedWidth / 2
-    local minY = screenPoint.Y - fixedHeight / 2
-    local maxX = screenPoint.X + fixedWidth / 2
-    local maxY = screenPoint.Y + fixedHeight / 2
+    local corners = {
+        cf * Vector3New(size.X/2, size.Y/2, size.Z/2),
+        cf * Vector3New(-size.X/2, size.Y/2, size.Z/2),
+        cf * Vector3New(-size.X/2, -size.Y/2, size.Z/2),
+        cf * Vector3New(size.X/2, -size.Y/2, size.Z/2),
+        cf * Vector3New(size.X/2, size.Y/2, -size.Z/2),
+        cf * Vector3New(-size.X/2, size.Y/2, -size.Z/2),
+        cf * Vector3New(-size.X/2, -size.Y/2, -size.Z/2),
+        cf * Vector3New(size.X/2, -size.Y/2, -size.Z/2),
+    }
 
+    local minX, minY = math.huge, math.huge
+    local maxX, maxY = -math.huge, -math.huge
+    local onScreen = false
+    
+    for _, corner in ipairs(corners) do
+        local screenPoint, visible = Camera:WorldToViewportPoint(corner)
+        if visible then
+            onScreen = true
+            minX = math.min(minX, screenPoint.X)
+            minY = math.min(minY, screenPoint.Y)
+            maxX = math.max(maxX, screenPoint.X)
+            maxY = math.max(maxY, screenPoint.Y)
+        end
+    end
+    
+    if not onScreen then return nil end
+
+    local minSize = 8
+    local width = maxX - minX
+    local height = maxY - minY
+    
+    if width < minSize then
+        local center = (minX + maxX) / 2
+        minX = center - minSize / 2
+        maxX = center + minSize / 2
+    end
+    
+    if height < minSize then
+        local center = (minY + maxY) / 2
+        minY = center - minSize / 2
+        maxY = center + minSize / 2
+    end
+    
     return {
         minX = minX,
         minY = minY,
