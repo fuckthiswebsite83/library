@@ -323,18 +323,15 @@ function ESPObject:CalculateBounds(character)
     local hrp = character:FindFirstChild("HumanoidRootPart")
     if not hrp then return nil end
 
-    local size = character:GetExtentsSize()
+    local fixedWidth = 4
+    local fixedHeight = 7
     local cf = hrp.CFrame
 
     local corners = {
-        cf * Vector3New(size.X/2, size.Y/2, size.Z/2),
-        cf * Vector3New(-size.X/2, size.Y/2, size.Z/2),
-        cf * Vector3New(-size.X/2, -size.Y/2, size.Z/2),
-        cf * Vector3New(size.X/2, -size.Y/2, size.Z/2),
-        cf * Vector3New(size.X/2, size.Y/2, -size.Z/2),
-        cf * Vector3New(-size.X/2, size.Y/2, -size.Z/2),
-        cf * Vector3New(-size.X/2, -size.Y/2, -size.Z/2),
-        cf * Vector3New(size.X/2, -size.Y/2, -size.Z/2),
+        cf * Vector3New(fixedWidth/2, fixedHeight/2, 0),
+        cf * Vector3New(-fixedWidth/2, fixedHeight/2, 0),
+        cf * Vector3New(-fixedWidth/2, -fixedHeight/2, 0),
+        cf * Vector3New(fixedWidth/2, -fixedHeight/2, 0)
     }
 
     local minX, minY = math.huge, math.huge
@@ -354,22 +351,6 @@ function ESPObject:CalculateBounds(character)
     
     if not onScreen then return nil end
 
-    local minSize = 8
-    local width = maxX - minX
-    local height = maxY - minY
-    
-    if width < minSize then
-        local center = (minX + maxX) / 2
-        minX = center - minSize / 2
-        maxX = center + minSize / 2
-    end
-    
-    if height < minSize then
-        local center = (minY + maxY) / 2
-        minY = center - minSize / 2
-        maxY = center + minSize / 2
-    end
-    
     return {
         minX = minX,
         minY = minY,
