@@ -145,16 +145,29 @@ function HealthBar:Update(character, bounds, config)
         return
     end
     
-    local humanoid = character:FindFirstChildOfClass("Humanoid")
-    if not humanoid then
-        self:SetVisible(false)
-        self.outline.Visible = false
-        return
+    local healthPercent
+    if game.PlaceId == 863266079 then
+        local player = Players:GetPlayerFromCharacter(character)
+        if player and player:FindFirstChild("Stats") and player.Stats:FindFirstChild("Health") then
+            local health = player.Stats.Health.Value
+            local maxHealth = 100
+            healthPercent = health / maxHealth
+        else
+            self:SetVisible(false)
+            self.outline.Visible = false
+            return
+        end
+    else
+        local humanoid = character:FindFirstChildOfClass("Humanoid")
+        if not humanoid then
+            self:SetVisible(false)
+            self.outline.Visible = false
+            return
+        end
+        healthPercent = humanoid.Health / humanoid.MaxHealth
     end
     
-    local healthPercent = humanoid.Health / humanoid.MaxHealth
     local boxHeight = bounds.maxY - bounds.minY
-    
     local healthColor = Color3New(1 - healthPercent, healthPercent, 0)
     self.drawable.Color = healthColor
     
