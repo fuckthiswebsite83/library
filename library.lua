@@ -18,6 +18,49 @@ ESP.__index = ESP
 local ESPComponent = {}
 ESPComponent.__index = ESPComponent
 
+local Functions = {}
+do
+    function Functions:Create(Class, Properties)
+        local _Instance = typeof(Class) == 'string' and Instance.new(Class) or Class
+        for Property, Value in pairs(Properties) do
+            _Instance[Property] = Value
+        end
+        return _Instance
+    end
+
+    function Functions:FadeOutOnDist(element, distance, maxDistance)
+        local transparency = math.max(0.1, 1 - (distance / maxDistance))
+        if element:IsA("TextLabel") then
+            element.TextTransparency = 1 - transparency
+        elseif element:IsA("ImageLabel") then
+            element.ImageTransparency = 1 - transparency
+        elseif element:IsA("UIStroke") then
+            element.Transparency = 1 - transparency
+        elseif element:IsA("Frame") then
+            element.BackgroundTransparency = 1 - transparency
+        elseif element:IsA("Highlight") then
+            element.FillTransparency = 1 - transparency
+            element.OutlineTransparency = 1 - transparency
+        end
+    end
+end
+
+function ESPComponent:SetVisible(visible)
+    if typeof(self.drawable) == "Instance" and self.drawable:IsA("Highlight") then
+        self.drawable.Enabled = visible
+    else
+        self.drawable.Visible = visible
+    end
+end
+
+function ESPComponent:Destroy()
+    if typeof(self.drawable) == "Instance" then
+        self.drawable:Destroy()
+    else
+        self.drawable:Remove()
+    end
+end
+
 local function NewDrawing(type, properties)
     local drawing = DrawingNew(type)
     for prop, value in pairs(properties or {}) do
@@ -32,91 +75,6 @@ local function create_instance(class, properties)
         instance[property] = value
     end
     return instance
-end
-
-local function load_chams()
-    local screen_gui = create_instance("ScreenGui", {
-        Parent = CoreGui,
-        Name = "chams_holder",
-    })
-
-    local function create_chams(player)
-        local chams = create_instance("Highlight", {
-            Parent = screen_gui,
-            FillTransparency = 1,
-            OutlineTransparency = 0,
-            OutlineColor = Color3.fromRGB(119, 120, 255),
-            DepthMode = "AlwaysOnTop"
-        })
-
-        local function update_chams()
-            local connection
-            local function hide_chams()
-                chams.Enabled = false
-                if not player then
-                    screen_gui:Destroy()
-                    connection:Disconnect()
-                end
-            end
-
-            connection = RunService.RenderStepped:Connect(function()
-                if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                    local hrp = player.Character.HumanoidRootPart
-                    local pos, on_screen = Workspace.CurrentCamera:WorldToScreenPoint(hrp.Position)
-                    local dist = (Workspace.CurrentCamera.CFrame.Position - hrp.Position).Magnitude / 3.5714285714
-
-                    if on_screen and dist <= 9999 then
-                        chams.Adornee = player.Character
-                        chams.Enabled = true
-
-                        if true then
-                            local hue = tick() % 5 / 5
-                            local color = Color3.fromHSV(hue, 1, 1)
-                            chams.FillColor = color
-                            chams.OutlineColor = color
-                        else
-                            chams.FillColor = Color3.fromRGB(119, 120, 255)
-                            chams.OutlineColor = Color3.fromRGB(119, 120, 255)
-                        end
-
-                        if true then
-                            local fade_in_out = 0.5 + 0.5 * math.sin(tick() * 2)
-                            chams.FillTransparency = 100 * fade_in_out * 0.01
-                            chams.OutlineTransparency = 100 * fade_in_out * 0.01
-                        end
-
-                        if true then
-                            chams.OutlineTransparency = 0.5
-                        end
-
-                        if true then
-                            chams.DepthMode = "Occluded"
-                        else
-                            chams.DepthMode = "AlwaysOnTop"
-                        end
-                    else
-                        hide_chams()
-                    end
-                else
-                    hide_chams()
-                end
-            end)
-        end
-
-        coroutine.wrap(update_chams)()
-    end
-
-    local function setup_player_chams(player)
-        if player.Name ~= Players.LocalPlayer.Name then
-            coroutine.wrap(create_chams)(player)
-        end
-    end
-
-    for _, player in pairs(Players:GetPlayers()) do
-        setup_player_chams(player)
-    end
-
-    Players.PlayerAdded:Connect(setup_player_chams)
 end
 
 local Box = setmetatable({}, ESPComponent)
@@ -204,32 +162,13 @@ function HealthBar:Update(character, bounds, config)
     end
     
     local humanoid = character:FindFirstChildOfClass("Humanoid")
-    local health, maxHealth
-
-    -- Check for custom health value in Stats folder only if the game ID is 863266079
-    if game.PlaceId == 863266079 then
-        local player = Players:GetPlayerFromCharacter(character)
-        if player and player:FindFirstChild("Stats") and player.Stats:FindFirstChild("Health") then
-            health = player.Stats.Health.Value
-            maxHealth = player.Stats.Health.MaxValue or 100 -- Assuming max health is 100 if not specified
-        elseif humanoid then
-            health = humanoid.Health
-            maxHealth = humanoid.MaxHealth
-        else
-            self:SetVisible(false)
-            self.outline.Visible = false
-            return
-        end
-    elseif humanoid then
-        health = humanoid.Health
-        maxHealth = humanoid.MaxHealth
-    else
+    if not humanoid then
         self:SetVisible(false)
         self.outline.Visible = false
         return
     end
     
-    local healthPercent = health / maxHealth
+    local healthPercent = humanoid.Health / humanoid.MaxHealth
     local boxHeight = bounds.maxY - bounds.minY
     
     local healthColor = Color3New(1 - healthPercent, healthPercent, 0)
@@ -242,16 +181,6 @@ function HealthBar:Update(character, bounds, config)
     self.outline.Size = Vector2New(5, boxHeight)
     self.outline.Position = Vector2New(bounds.minX - 10, bounds.minY)
     self.outline.Visible = true
-end
-
-function HealthBar:SetVisible(visible)
-    self.drawable.Visible = visible
-    self.outline.Visible = visible
-end
-
-function HealthBar:Destroy()
-    self.drawable:Remove()
-    self.outline:Remove()
 end
 
 local NameTag = setmetatable({}, ESPComponent)
@@ -287,31 +216,55 @@ function NameTag:Update(character, bounds, config)
     self:SetVisible(true)
 end
 
-function NameTag:SetVisible(visible)
-    self.drawable.Visible = visible
+local Distance = setmetatable({}, ESPComponent)
+Distance.__index = Distance
+
+function Distance.new(distanceColor, distanceSize, distanceCenter, distanceOutline, distanceOutlineColor)
+    local self = setmetatable({}, Distance)
+    self.drawable = NewDrawing("Text", {
+        Visible = false,
+        Color = distanceColor or Color3New(1, 1, 1),
+        Size = distanceSize or 16,
+        Center = distanceCenter or true,
+        Outline = distanceOutline or true,
+        OutlineColor = distanceOutlineColor or Color3New(0, 0, 0)
+    })
+    return self
 end
 
-function NameTag:Destroy()
-    self.drawable:Remove()
+function Distance:Update(character, bounds, config)
+    if not (bounds and config.distanceEnabled) then
+        self:SetVisible(false)
+        return
+    end
+    
+    local rootPart = character:FindFirstChild("HumanoidRootPart")
+    if not rootPart then
+        self:SetVisible(false)
+        return
+    end
+    
+    local distance = (Camera.CFrame.Position - rootPart.Position).Magnitude
+    self.drawable.Text = string.format("[%d studs]", MathFloor(distance))
+    self.drawable.Position = Vector2New(bounds.minX + ((bounds.maxX - bounds.minX) / 2), bounds.maxY + 5)
+    self:SetVisible(true)
 end
 
 local Cham = setmetatable({}, ESPComponent)
 Cham.__index = Cham
 
-function Cham.new(chamColor, chamThickness, chamTransparency, wallCheck, outlineColor, outlineTransparency, thermalEnabled, rainbowEnabled, glowEnabled)
+function Cham.new(chamColor, chamTransparency, outlineColor, outlineTransparency, rainbow, pulse)
     local self = setmetatable({}, Cham)
     self.drawable = create_instance("Highlight", {
         Parent = CoreGui,
         FillColor = chamColor or Color3New(0, 0, 1),
+        FillTransparency = chamTransparency or 0.5,
         OutlineColor = outlineColor or Color3New(1, 1, 1),
         OutlineTransparency = outlineTransparency or 0.5,
-        FillTransparency = chamTransparency or 0.5,
         Enabled = false
     })
-    self.wallCheck = wallCheck or false
-    self.thermalEnabled = thermalEnabled or false
-    self.rainbowEnabled = rainbowEnabled or false
-    self.glowEnabled = glowEnabled or false
+    self.rainbow = rainbow or false
+    self.pulse = pulse or false
     return self
 end
 
@@ -321,53 +274,43 @@ function Cham:Update(character, bounds, config)
         return
     end
     
-    self.drawable.Adornee = character
-    self:SetVisible(true)
+    if character then
+        self.drawable.Adornee = character
+        
+        if self.rainbow then
+            local hue = tick() % 5 / 5
+            local color = Color3.fromHSV(hue, 1, 1)
+            self.drawable.FillColor = color
+            self.drawable.OutlineColor = color
+        end
+        
+        if self.pulse then
+            local fade_in_out = 0.5 + 0.5 * math.sin(tick() * 2)
+            self.drawable.FillTransparency = self.drawable.FillTransparency * fade_in_out
+            self.drawable.OutlineTransparency = self.drawable.OutlineTransparency * fade_in_out
+        end
 
-    if config.rainbowEnabled then
-        local hue = tick() % 5 / 5
-        local color = Color3.fromHSV(hue, 1, 1)
-        self.drawable.FillColor = color
-        self.drawable.OutlineColor = color
+        self:SetVisible(true)
     else
-        self.drawable.FillColor = config.chamColor
-        self.drawable.OutlineColor = config.outlineColor
+        self:SetVisible(false)
     end
-
-    if config.thermalEnabled then
-        local breathe_effect = math.atan(math.sin(tick() * 2)) * 2 / math.pi
-        self.drawable.FillTransparency = config.chamTransparency * breathe_effect * 0.01
-        self.drawable.OutlineTransparency = config.outlineTransparency * breathe_effect * 0.01
-    end
-
-    if config.glowEnabled then
-        self.drawable.OutlineTransparency = 0.5
-    end
-
-    if config.wallCheck then
-        self.drawable.DepthMode = "Occluded"
-    else
-        self.drawable.DepthMode = "AlwaysOnTop"
-    end
-end
-
-function Cham:SetVisible(visible)
-    self.drawable.Enabled = visible
-end
-
-function Cham:Destroy()
-    self.drawable:Destroy()
 end
 
 local ESPObject = {}
 ESPObject.__index = ESPObject
 
-function ESPObject.new(boxColor, boxThickness, boxTransparency, boxFilled, boxFillColor, boxFillTransparency, healthBarColor, healthBarThickness, healthBarTransparency, healthBarFilled, nameTagColor, nameTagSize, nameTagCenter, nameTagOutline, nameTagOutlineColor, chamColor, chamThickness, chamTransparency, wallCheck, outlineColor, outlineTransparency, thermalEnabled, rainbowEnabled, glowEnabled)
+function ESPObject.new(boxColor, boxThickness, boxTransparency, boxFilled, boxFillColor, boxFillTransparency, 
+    healthBarColor, healthBarThickness, healthBarTransparency, healthBarFilled, 
+    nameTagColor, nameTagSize, nameTagCenter, nameTagOutline, nameTagOutlineColor, 
+    distanceColor, distanceSize, distanceCenter, distanceOutline, distanceOutlineColor, 
+    chamColor, chamTransparency, outlineColor, outlineTransparency, rainbow, pulse)
+    
     local self = setmetatable({}, ESPObject)
     self.box = Box.new(boxColor, boxThickness, boxTransparency, boxFilled, boxFillColor, boxFillTransparency)
     self.healthBar = HealthBar.new(healthBarColor, healthBarThickness, healthBarTransparency, healthBarFilled)
     self.nameTag = NameTag.new(nameTagColor, nameTagSize, nameTagCenter, nameTagOutline, nameTagOutlineColor)
-    self.cham = Cham.new(chamColor, chamThickness, chamTransparency, wallCheck, outlineColor, outlineTransparency, thermalEnabled, rainbowEnabled, glowEnabled)
+    self.distance = Distance.new(distanceColor, distanceSize, distanceCenter, distanceOutline, distanceOutlineColor)
+    self.cham = Cham.new(chamColor, chamTransparency, outlineColor, outlineTransparency, rainbow, pulse)
     return self
 end
 
@@ -386,6 +329,7 @@ function ESPObject:Update(character, config)
     self.box:Update(character, bounds, config)
     self.healthBar:Update(character, bounds, config)
     self.nameTag:Update(character, bounds, config)
+    self.distance:Update(character, bounds, config)
     self.cham:Update(character, bounds, config)
 end
 
@@ -453,6 +397,7 @@ function ESPObject:SetVisible(visible)
     self.healthBar:SetVisible(visible)
     self.healthBar.outline.Visible = visible
     self.nameTag:SetVisible(visible)
+    self.distance:SetVisible(visible)
     self.cham:SetVisible(visible)
 end
 
@@ -461,11 +406,10 @@ function ESPObject:Destroy()
     self.healthBar:Destroy()
     self.healthBar.outline:Remove()
     self.nameTag:Destroy()
+    self.distance:Destroy()
     self.cham:Destroy()
 end
 
 ESP.Object = ESPObject
-
-load_chams()
 
 return ESP
