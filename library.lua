@@ -324,17 +324,17 @@ function ESPObject:CalculateBounds(character)
     if not hrp then return nil end
 
     local size = character:GetExtentsSize()
-    local cf = character:GetPivot()
-    
+    local cf = hrp.CFrame
+
     local corners = {
-        cf * Vector3New(size.X/2, size.Y/2, size.X/2),
-        cf * Vector3New(-size.X/2, size.Y/2, size.X/2),
-        cf * Vector3New(-size.X/2, -size.Y/2, size.X/2),
-        cf * Vector3New(size.X/2, -size.Y/2, size.X/2),
-        cf * Vector3New(size.X/2, size.Y/2, -size.X/2),
-        cf * Vector3New(-size.X/2, size.Y/2, -size.X/2),
-        cf * Vector3New(-size.X/2, -size.Y/2, -size.X/2),
-        cf * Vector3New(size.X/2, -size.Y/2, -size.X/2),
+        cf * Vector3New(size.X/2, size.Y/2, size.Z/2),
+        cf * Vector3New(-size.X/2, size.Y/2, size.Z/2),
+        cf * Vector3New(-size.X/2, -size.Y/2, size.Z/2),
+        cf * Vector3New(size.X/2, -size.Y/2, size.Z/2),
+        cf * Vector3New(size.X/2, size.Y/2, -size.Z/2),
+        cf * Vector3New(-size.X/2, size.Y/2, -size.Z/2),
+        cf * Vector3New(-size.X/2, -size.Y/2, -size.Z/2),
+        cf * Vector3New(size.X/2, -size.Y/2, -size.Z/2),
     }
 
     local minX, minY = math.huge, math.huge
