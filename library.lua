@@ -286,8 +286,8 @@ function Cham:Update(character, bounds, config)
         
         if self.pulse then
             local fade_in_out = 0.5 + 0.5 * math.sin(tick() * 2)
-            self.drawable.FillTransparency = self.drawable.FillTransparency * fade_in_out
-            self.drawable.OutlineTransparency = self.drawable.OutlineTransparency * fade_in_out
+            self.drawable.FillTransparency = 0.5 * fade_in_out
+            self.drawable.OutlineTransparency = 0.5 * fade_in_out
         end
 
         self:SetVisible(true)
