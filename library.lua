@@ -78,20 +78,20 @@ function Box:Update(character, bounds, config)
         return
     end
     
+    -- Reset visibility state before updating
+    self:SetVisible(true)
+    self.fillDrawable.Visible = config.boxFilled
+    
     self.drawable.Size = Vector2New(bounds.maxX - bounds.minX, bounds.maxY - bounds.minY)
     self.drawable.Position = Vector2New(bounds.minX, bounds.minY)
     self.drawable.Color = config.boxColor
     self.drawable.Transparency = config.boxTransparency
-    self.drawable.Visible = true
     
     if config.boxFilled then
         self.fillDrawable.Size = self.drawable.Size
         self.fillDrawable.Position = self.drawable.Position
         self.fillDrawable.Color = config.boxFillColor
         self.fillDrawable.Transparency = config.boxFillTransparency
-        self.fillDrawable.Visible = true
-    else
-        self.fillDrawable.Visible = false
     end
 end
 
@@ -234,6 +234,11 @@ function HealthBar:Update(character, bounds, config)
     self.drawable.Position = Vector2New(barX, barY + boxHeight * (1 - healthPercent))
     self.drawable.Color = healthColor
     self:SetVisible(true)
+end
+
+function HealthBar:SetVisible(visible)
+    self.drawable.Visible = visible
+    self.outline.Visible = visible  -- Add this line
 end
 
 local NameTag = setmetatable({}, ESPComponent)
@@ -380,7 +385,10 @@ function ESPObject:Update(character, config)
         self:SetVisible(false)
         return
     end
-
+    
+    -- Add visibility check to prevent double rendering
+    self:SetVisible(true)  -- Add this line
+    
     self.box:Update(character, bounds, config)
     self.healthBar:Update(character, bounds, config)
     self.nameTag:Update(character, bounds, config)
