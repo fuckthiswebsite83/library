@@ -116,6 +116,65 @@ function Box:Destroy()
     self.fillDrawable:Remove()
 end
 
+function Box:CalculateBounds(character)
+    local hrp = character:FindFirstChild("HumanoidRootPart")
+    if not hrp then return nil end
+
+    local size = Vector3New(3, 5.5, 3)
+    local cf = hrp.CFrame
+
+    local corners = {
+        cf * Vector3New(size.X/2, size.Y/2, size.Z/2),
+        cf * Vector3New(-size.X/2, size.Y/2, size.Z/2),
+        cf * Vector3New(-size.X/2, -size.Y/2, size.Z/2),
+        cf * Vector3New(size.X/2, -size.Y/2, size.Z/2),
+        cf * Vector3New(size.X/2, size.Y/2, -size.Z/2),
+        cf * Vector3New(-size.X/2, size.Y/2, -size.Z/2),
+        cf * Vector3New(-size.X/2, -size.Y/2, -size.Z/2),
+        cf * Vector3New(size.X/2, -size.Y/2, -size.Z/2),
+    }
+
+    local minX, minY = math.huge, math.huge
+    local maxX, maxY = -math.huge, -math.huge
+    local onScreen = false
+    
+    for _, corner in ipairs(corners) do
+        local screenPoint, visible = Camera:WorldToViewportPoint(corner)
+        if visible then
+            onScreen = true
+            minX = math.min(minX, math.floor(screenPoint.X))
+            minY = math.min(minY, math.floor(screenPoint.Y))
+            maxX = math.max(maxX, math.ceil(screenPoint.X))
+            maxY = math.max(maxY, math.ceil(screenPoint.Y))
+        end
+    end
+    
+    if not onScreen then return nil end
+
+    local minSize = 12
+    local width = maxX - minX
+    local height = maxY - minY
+    
+    if width < minSize then
+        local center = (minX + maxX) / 2
+        minX = math.floor(center - minSize / 2)
+        maxX = math.ceil(center + minSize / 2)
+    end
+    
+    if height < minSize then
+        local center = (minY + maxY) / 2
+        minY = math.floor(center - minSize / 2)
+        maxY = math.ceil(center + minSize / 2)
+    end
+    
+    return {
+        minX = minX,
+        minY = minY,
+        maxX = maxX,
+        maxY = maxY
+    }
+end
+
 local HealthBar = setmetatable({}, ESPComponent)
 HealthBar.__index = HealthBar
 
@@ -169,15 +228,19 @@ function HealthBar:Update(character, bounds, config)
     
     local boxHeight = bounds.maxY - bounds.minY
     local healthColor = Color3New(1 - healthPercent, healthPercent, 0)
-    self.drawable.Color = healthColor
-    
-    self.drawable.Size = Vector2New(5, boxHeight * healthPercent)
-    self.drawable.Position = Vector2New(bounds.minX - 10, bounds.minY + boxHeight * (1 - healthPercent))
-    self:SetVisible(true)
-    
-    self.outline.Size = Vector2New(5, boxHeight)
-    self.outline.Position = Vector2New(bounds.minX - 10, bounds.minY)
+
+    local barWidth = 5
+    local barX = math.floor(bounds.minX - 10)
+    local barY = math.floor(bounds.minY)
+
+    self.outline.Size = Vector2New(barWidth, boxHeight)
+    self.outline.Position = Vector2New(barX, barY)
     self.outline.Visible = true
+
+    self.drawable.Size = Vector2New(barWidth, math.max(1, boxHeight * healthPercent))
+    self.drawable.Position = Vector2New(barX, barY + boxHeight * (1 - healthPercent))
+    self.drawable.Color = healthColor
+    self:SetVisible(true)
 end
 
 local NameTag = setmetatable({}, ESPComponent)
