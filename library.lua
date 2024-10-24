@@ -167,25 +167,6 @@ end
 local HealthBar = setmetatable({}, ESPComponent)
 HealthBar.__index = HealthBar
 
-function HealthBar.new(healthBarColor, healthBarThickness, healthBarTransparency, healthBarFilled)
-    local self = setmetatable({}, HealthBar)
-    self.drawable = NewDrawing("Square", {
-        Visible = false,
-        Color = healthBarColor or Color3New(0, 1, 0),
-        Thickness = healthBarThickness or 1,
-        Transparency = healthBarTransparency or 1,
-        Filled = healthBarFilled or true
-    })
-    self.outline = NewDrawing("Square", {
-        Visible = false,
-        Color = Color3New(0, 0, 0),
-        Thickness = healthBarThickness or 1,
-        Transparency = healthBarTransparency or 1,
-        Filled = false
-    })
-    return self
-end
-
 function HealthBar:Update(character, bounds, config)
     -- Check conditions
     if not (bounds and config.healthBarEnabled) then
@@ -230,8 +211,10 @@ function HealthBar:Update(character, bounds, config)
     self.outline.Size = Vector2New(barWidth, boxHeight)
     self.outline.Position = Vector2New(barX, barY)
     
-    self.drawable.Size = Vector2New(barWidth, math.max(1, boxHeight * healthPercent))
-    self.drawable.Position = Vector2New(barX, barY + boxHeight * (1 - healthPercent))
+    local barHeight = math.max(1, boxHeight * healthPercent)
+    local barPositionY = barY + (boxHeight - barHeight) -- Adjusted Y position calculation
+    self.drawable.Size = Vector2New(barWidth - 1, barHeight)  -- Make health bar slightly smaller than outline
+    self.drawable.Position = Vector2New(barX + 0.5, barPositionY)  -- Center the healthbar within outline
     self.drawable.Color = healthColor
     
     -- At the end, set BOTH to visible explicitly
