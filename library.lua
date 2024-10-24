@@ -78,7 +78,6 @@ function Box:Update(character, bounds, config)
         return
     end
     
-    -- Reset visibility state before updating
     self:SetVisible(true)
     self.fillDrawable.Visible = config.boxFilled
     
@@ -98,11 +97,6 @@ end
 function Box:SetVisible(visible)
     self.drawable.Visible = visible
     self.fillDrawable.Visible = visible and self.fillDrawable.Visible
-end
-
-function Box:Destroy()
-    self.drawable:Remove()
-    self.fillDrawable:Remove()
 end
 
 function Box:CalculateBounds(character)
@@ -131,10 +125,10 @@ function Box:CalculateBounds(character)
         local screenPoint, visible = Camera:WorldToViewportPoint(corner)
         if visible then
             onScreen = true
-            minX = math.min(minX, math.floor(screenPoint.X))
-            minY = math.min(minY, math.floor(screenPoint.Y))
-            maxX = math.max(maxX, math.ceil(screenPoint.X))
-            maxY = math.max(maxY, math.ceil(screenPoint.Y))
+            minX = math.min(minX, MathFloor(screenPoint.X))
+            minY = math.min(minY, MathFloor(screenPoint.Y))
+            maxX = math.max(maxX, MathFloor(screenPoint.X))
+            maxY = math.max(maxY, MathFloor(screenPoint.Y))
         end
     end
     
@@ -146,14 +140,14 @@ function Box:CalculateBounds(character)
     
     if width < minSize then
         local center = (minX + maxX) / 2
-        minX = math.floor(center - minSize / 2)
-        maxX = math.ceil(center + minSize / 2)
+        minX = MathFloor(center - minSize / 2)
+        maxX = MathFloor(center + minSize / 2)
     end
     
     if height < minSize then
         local center = (minY + maxY) / 2
-        minY = math.floor(center - minSize / 2)
-        maxY = math.ceil(center + minSize / 2)
+        minY = MathFloor(center - minSize / 2)
+        maxY = MathFloor(center + minSize / 2)
     end
     
     return {
@@ -168,7 +162,6 @@ local HealthBar = setmetatable({}, ESPComponent)
 HealthBar.__index = HealthBar
 
 function HealthBar:Update(character, bounds, config)
-    -- Check conditions
     if not (bounds and config.healthBarEnabled) then
         self.drawable.Visible = false
         self.outline.Visible = false
@@ -198,26 +191,25 @@ function HealthBar:Update(character, bounds, config)
     end
     
     local boxHeight = bounds.maxY - bounds.minY
-    local healthColor = Color3.new(
+    local healthColor = Color3New(
         math.min(2 * (1 - healthPercent), 1), 
         math.min(2 * healthPercent, 1),
         0
     )
     
     local barWidth = 5
-    local barX = math.floor(bounds.minX - 10)
-    local barY = math.floor(bounds.minY)
+    local barX = MathFloor(bounds.minX - 10)
+    local barY = MathFloor(bounds.minY)
     
     self.outline.Size = Vector2New(barWidth, boxHeight)
     self.outline.Position = Vector2New(barX, barY)
     
     local barHeight = math.max(1, boxHeight * healthPercent)
-    local barPositionY = barY + (boxHeight - barHeight) -- Adjusted Y position calculation
-    self.drawable.Size = Vector2New(barWidth - 1, barHeight)  -- Make health bar slightly smaller than outline
-    self.drawable.Position = Vector2New(barX + 0.5, barPositionY)  -- Center the healthbar within outline
+    local barPositionY = barY + (boxHeight - barHeight)
+    self.drawable.Size = Vector2New(barWidth - 1, barHeight)
+    self.drawable.Position = Vector2New(barX + 0.5, barPositionY)
     self.drawable.Color = healthColor
     
-    -- At the end, set BOTH to visible explicitly
     self.drawable.Visible = true
     self.outline.Visible = true
 end
@@ -367,7 +359,6 @@ function ESPObject:Update(character, config)
         return
     end
     
-    -- Add visibility check to prevent double rendering
     self:SetVisible(true)
     
     self.box:Update(character, bounds, config)
