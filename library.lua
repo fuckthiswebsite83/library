@@ -238,7 +238,7 @@ end
 
 function HealthBar:SetVisible(visible)
     self.drawable.Visible = visible
-    self.outline.Visible = visible  -- Add this line
+    self.outline.Visible = visible  -- This line is crucial
 end
 
 local NameTag = setmetatable({}, ESPComponent)
@@ -387,7 +387,7 @@ function ESPObject:Update(character, config)
     end
     
     -- Add visibility check to prevent double rendering
-    self:SetVisible(true)  -- Add this line
+    self:SetVisible(true)
     
     self.box:Update(character, bounds, config)
     self.healthBar:Update(character, bounds, config)
