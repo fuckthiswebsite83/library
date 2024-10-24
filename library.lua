@@ -18,15 +18,12 @@ ESP.__index = ESP
 local ESPComponent = {}
 ESPComponent.__index = ESPComponent
 
-local Functions = {}
-do
-    function Functions:Create(Class, Properties)
-        local _Instance = typeof(Class) == 'string' and Instance.new(Class) or Class
-        for Property, Value in pairs(Properties) do
-            _Instance[Property] = Value
-        end
-        return _Instance
+local function create_instance(class, properties)
+    local instance = typeof(class) == 'string' and Instance.new(class) or class
+    for property, value in pairs(properties) do
+        instance[property] = value
     end
+    return instance
 end
 
 function ESPComponent:SetVisible(visible)
@@ -51,14 +48,6 @@ local function NewDrawing(type, properties)
         drawing[prop] = value
     end
     return drawing
-end
-
-local function create_instance(class, properties)
-    local instance = typeof(class) == 'string' and Instance.new(class) or class
-    for property, value in pairs(properties) do
-        instance[property] = value
-    end
-    return instance
 end
 
 local Box = setmetatable({}, ESPComponent)
@@ -227,16 +216,20 @@ function HealthBar:Update(character, bounds, config)
     end
     
     local boxHeight = bounds.maxY - bounds.minY
-    local healthColor = Color3New(1 - healthPercent, healthPercent, 0)
-
+    local healthColor = Color3.new(
+        math.min(2 * (1 - healthPercent), 1), 
+        math.min(2 * healthPercent, 1),
+        0
+    )
+    
     local barWidth = 5
     local barX = math.floor(bounds.minX - 10)
     local barY = math.floor(bounds.minY)
-
+    
     self.outline.Size = Vector2New(barWidth, boxHeight)
     self.outline.Position = Vector2New(barX, barY)
     self.outline.Visible = true
-
+    
     self.drawable.Size = Vector2New(barWidth, math.max(1, boxHeight * healthPercent))
     self.drawable.Position = Vector2New(barX, barY + boxHeight * (1 - healthPercent))
     self.drawable.Color = healthColor
@@ -382,7 +375,7 @@ function ESPObject:Update(character, config)
         return
     end
 
-    local bounds = self:CalculateBounds(character)
+    local bounds = self.box:CalculateBounds(character)
     if not bounds then
         self:SetVisible(false)
         return
@@ -393,64 +386,6 @@ function ESPObject:Update(character, config)
     self.nameTag:Update(character, bounds, config)
     self.distance:Update(character, bounds, config)
     self.cham:Update(character, bounds, config)
-end
-
-function ESPObject:CalculateBounds(character)
-    local hrp = character:FindFirstChild("HumanoidRootPart")
-    if not hrp then return nil end
-    local size = Vector3New(2, 5, 2)
-    local cf = hrp.CFrame
-
-    local corners = {
-        cf * Vector3New(size.X/2, size.Y/2, size.Z/2),
-        cf * Vector3New(-size.X/2, size.Y/2, size.Z/2),
-        cf * Vector3New(-size.X/2, -size.Y/2, size.Z/2),
-        cf * Vector3New(size.X/2, -size.Y/2, size.Z/2),
-        cf * Vector3New(size.X/2, size.Y/2, -size.Z/2),
-        cf * Vector3New(-size.X/2, size.Y/2, -size.Z/2),
-        cf * Vector3New(-size.X/2, -size.Y/2, -size.Z/2),
-        cf * Vector3New(size.X/2, -size.Y/2, -size.Z/2),
-    }
-
-    local minX, minY = math.huge, math.huge
-    local maxX, maxY = -math.huge, -math.huge
-    local onScreen = false
-    
-    for _, corner in ipairs(corners) do
-        local screenPoint, visible = Camera:WorldToViewportPoint(corner)
-        if visible then
-            onScreen = true
-            minX = math.min(minX, screenPoint.X)
-            minY = math.min(minY, screenPoint.Y)
-            maxX = math.max(maxX, screenPoint.X)
-            maxY = math.max(maxY, screenPoint.Y)
-        end
-    end
-    
-    if not onScreen then return nil end
-
-    local minSize = 8
-    local width = maxX - minX
-    local height = maxY - minY
-    
-    if width < minSize then
-        local center = (minX + maxX) / 2
-        minX = center - minSize / 2
-        maxX = center + minSize / 2
-    end
-    
-    if height < minSize then
-        local center = (minY + maxY) / 2
-        minY = center - minSize / 2
-        maxY = center + minSize / 2
-    end
-    
-    return {
-        minX = minX,
-        minY = minY,
-        maxX = maxX,
-        maxY = maxY
-    }
 end
 
 function ESPObject:SetVisible(visible)
