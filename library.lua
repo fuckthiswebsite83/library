@@ -187,8 +187,9 @@ function HealthBar.new(healthBarColor, healthBarThickness, healthBarTransparency
 end
 
 function HealthBar:Update(character, bounds, config)
+    -- Check conditions
     if not (bounds and config.healthBarEnabled) then
-        self:SetVisible(false)
+        self.drawable.Visible = false
         self.outline.Visible = false
         return
     end
@@ -201,14 +202,14 @@ function HealthBar:Update(character, bounds, config)
             local maxHealth = 100
             healthPercent = health / maxHealth
         else
-            self:SetVisible(false)
+            self.drawable.Visible = false
             self.outline.Visible = false
             return
         end
     else
         local humanoid = character:FindFirstChildOfClass("Humanoid")
         if not humanoid then
-            self:SetVisible(false)
+            self.drawable.Visible = false
             self.outline.Visible = false
             return
         end
@@ -228,17 +229,14 @@ function HealthBar:Update(character, bounds, config)
     
     self.outline.Size = Vector2New(barWidth, boxHeight)
     self.outline.Position = Vector2New(barX, barY)
-    self.outline.Visible = true
     
     self.drawable.Size = Vector2New(barWidth, math.max(1, boxHeight * healthPercent))
     self.drawable.Position = Vector2New(barX, barY + boxHeight * (1 - healthPercent))
     self.drawable.Color = healthColor
-    self:SetVisible(true)
-end
-
-function HealthBar:SetVisible(visible)
-    self.drawable.Visible = visible
-    self.outline.Visible = visible  -- This line is crucial
+    
+    -- At the end, set BOTH to visible explicitly
+    self.drawable.Visible = true
+    self.outline.Visible = true
 end
 
 local NameTag = setmetatable({}, ESPComponent)
