@@ -167,6 +167,25 @@ end
 local HealthBar = setmetatable({}, ESPComponent)
 HealthBar.__index = HealthBar
 
+function HealthBar.new(healthBarColor, healthBarThickness, healthBarTransparency, healthBarFilled)
+    local self = setmetatable({}, HealthBar)
+    self.drawable = NewDrawing("Square", {
+        Visible = false,
+        Color = healthBarColor or Color3New(0, 1, 0),
+        Thickness = healthBarThickness or 1,
+        Transparency = healthBarTransparency or 1,
+        Filled = healthBarFilled or true
+    })
+    self.outline = NewDrawing("Square", {
+        Visible = false,
+        Color = Color3New(0, 0, 0),
+        Thickness = healthBarThickness or 1,
+        Transparency = healthBarTransparency or 1,
+        Filled = false
+    })
+    return self
+end
+
 function HealthBar:Update(character, bounds, config)
     -- Check conditions
     if not (bounds and config.healthBarEnabled) then
