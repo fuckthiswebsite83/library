@@ -1,6 +1,7 @@
 local Workspace, RunService, Players, CoreGui, Lighting = cloneref(game:GetService("Workspace")), cloneref(game:GetService("RunService")), cloneref(game:GetService("Players")), game:GetService("CoreGui"), cloneref(game:GetService("Lighting"))
 
-_G.ESPConfig = _G.ESPConfig or {
+_Periphean = _Periphean or {}
+_Periphean.ESPConfig = _Periphean.ESPConfig or {
     Enabled = true,
     MaxDistance = 99999,
     FontSize = 11,
@@ -42,7 +43,9 @@ _G.ESPConfig = _G.ESPConfig or {
     },
 }
 
-local ESP = _G.ESPConfig
+local ESP = _Periphean.ESPConfig
+
+-- Rest of your ESP script...
 
 -- variables
 local lplayer = Players.LocalPlayer;
