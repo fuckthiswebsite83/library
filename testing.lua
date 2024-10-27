@@ -19,7 +19,6 @@ _Periphean.ESPConfig = _Periphean.ESPConfig or {
         Healthbar = {
             Enabled = true,
             HealthText = true,
-            HealthTextRGB = Color3.fromRGB(119, 120, 255),
             Width = 2.5,
         },
         Boxes = {
@@ -44,8 +43,6 @@ _Periphean.ESPConfig = _Periphean.ESPConfig or {
 }
 
 local ESP = _Periphean.ESPConfig
-
--- Rest of your ESP script...
 
 -- variables
 local lplayer = Players.LocalPlayer;
