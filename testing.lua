@@ -78,6 +78,7 @@ do -- initialize
         local Healthbar = Functions:Create("Frame", {Parent = ScreenGui, BackgroundColor3 = Color3.fromRGB(255, 255, 255), BackgroundTransparency = 0})
         local BehindHealthbar = Functions:Create("Frame", {Parent = ScreenGui, ZIndex = -1, BackgroundColor3 = Color3.fromRGB(0, 0, 0), BackgroundTransparency = 0})
         local HealthText = Functions:Create("TextLabel", {Parent = ScreenGui, Size = UDim2.new(0, 50, 0, 20), AnchorPoint = Vector2.new(1, 0.5), BackgroundTransparency = 1, TextColor3 = Color3.fromRGB(255, 255, 255), Font = Enum.Font.Code, TextSize = ESP.FontSize, TextStrokeTransparency = 0, TextStrokeColor3 = Color3.fromRGB(0, 0, 0)})
+        local StateText = Functions:Create("TextLabel", {Parent = ScreenGui, Size = UDim2.new(0, 100, 0, 20), AnchorPoint = Vector2.new(0, 0.5), BackgroundTransparency = 1, TextColor3 = Color3.fromRGB(255, 255, 255), Font = Enum.Font.Code, TextSize = ESP.FontSize, TextStrokeTransparency = 0, TextStrokeColor3 = Color3.fromRGB(0, 0, 0)})
 
         local LeftTop = Functions:Create("Frame", {Parent = ScreenGui, BackgroundColor3 = ESP.Drawing.Boxes.Corner.RGB, Position = UDim2.new(0, 0, 0, 0)})
         local LeftSide = Functions:Create("Frame", {Parent = ScreenGui, BackgroundColor3 = ESP.Drawing.Boxes.Corner.RGB, Position = UDim2.new(0, 0, 0, 0)})
@@ -96,6 +97,7 @@ do -- initialize
             Healthbar.Visible = false;
             BehindHealthbar.Visible = false;
             HealthText.Visible = false;
+            StateText.Visible = false;
             LeftTop.Visible = false;
             LeftSide.Visible = false;
             BottomSide.Visible = false;
@@ -189,6 +191,13 @@ do -- initialize
                         HealthText.Visible = true
                         HealthText.TextColor3 = Color3.fromHSV(health * 0.33, 1, 1)
                         HealthText.TextSize = smoothTextSize
+
+                        -- state text
+                        StateText.Position = UDim2.new(0, Pos.X - w / 2 + 10, 0, Pos.Y - h / 2 + h / 2)
+                        StateText.Text = Humanoid:GetState().Name
+                        StateText.Visible = true
+                        StateText.TextColor3 = Color3.fromRGB(255, 255, 255)
+                        StateText.TextSize = smoothTextSize
                     end
                     
                     -- names
