@@ -1,9 +1,9 @@
 local Workspace = cloneref(game:GetService("Workspace"))
 local RunService = cloneref(game:GetService("RunService"))
 local Players = cloneref(game:GetService("Players"))
-local CoreGui = game:GetService("CoreGui"))
+local CoreGui = game:GetService("CoreGui")
 local Lighting = cloneref(game:GetService("Lighting"))
-local UserInputService = game:GetService("UserInputService"))
+local UserInputService = game:GetService("UserInputService")
 local gameId = game.PlaceId
 
 _Periphean = _Periphean or {}
