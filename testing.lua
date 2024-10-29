@@ -9,7 +9,7 @@ local gameId = game.PlaceId
 _Periphean = _Periphean or {}
 _Periphean.ESPConfig = _Periphean.ESPConfig or {
     Enabled = true,
-    MaxDistance = 2000,
+    MaxDistance = 10000,
     FontSize = 11,
     MinFontSize = 8,
     Drawing = {
@@ -187,200 +187,179 @@ do
             end
         end
 
-        local previousInventoryText = ""
-
-        local maxDistance = _Periphean.ESPConfig.MaxDistance
-        local namesEnabled = _Periphean.ESPConfig.Drawing.Names.Enabled
-        local namesRGB = _Periphean.ESPConfig.Drawing.Names.RGB
-        local distancesEnabled = _Periphean.ESPConfig.Drawing.Distances.Enabled
-        local distancesRGB = _Periphean.ESPConfig.Drawing.Distances.RGB
-        local healthbarEnabled = _Periphean.ESPConfig.Drawing.Healthbar.Enabled
-        local healthbarWidth = _Periphean.ESPConfig.Drawing.Healthbar.Width
-        local boxesFullEnabled = _Periphean.ESPConfig.Drawing.Boxes.Full.Enabled
-        local boxesFilledRGB = _Periphean.ESPConfig.Drawing.Boxes.Filled.RGB
-        local boxesFilledTransparency = _Periphean.ESPConfig.Drawing.Boxes.Filled.Transparency
-        local boxesCornerEnabled = _Periphean.ESPConfig.Drawing.Boxes.Corner.Enabled
-        local tracersEnabled = _Periphean.ESPConfig.Drawing.Tracers.Enabled
-        local tracersRGB = _Periphean.ESPConfig.Drawing.Tracers.RGB
-        local tracersThickness = _Periphean.ESPConfig.Drawing.Tracers.Thickness
-        local inventoryViewerEnabled = _Periphean.ESPConfig.Drawing.InventoryViewer.Enabled
-        local inventoryViewerKeyPicker = _Periphean.ESPConfig.Drawing.InventoryViewer.KeyPicker
-
         Connection = _Periphean.ESPConfig.Connections.RunService.RenderStepped:Connect(function()
-            local character = plr.Character
-            if character and character:FindFirstChild("HumanoidRootPart") then
-                local HRP = character.HumanoidRootPart
-                local Humanoid = character:WaitForChild("Humanoid")
+            if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+                local HRP = plr.Character.HumanoidRootPart
+                local Humanoid = plr.Character:WaitForChild("Humanoid")
                 local Pos, OnScreen = Cam:WorldToScreenPoint(HRP.Position)
                 local Dist = (Cam.CFrame.Position - HRP.Position).Magnitude / 3.5714285714
                 
-                if not OnScreen or Dist > maxDistance then
-                    HideESP()
-                    return
-                end
+                if OnScreen and Dist <= _Periphean.ESPConfig.MaxDistance then
+                    local Size = HRP.Size.Y
+                    local scaleFactor = (Size * Cam.ViewportSize.Y) / (Pos.Z * 2)
+                    local w, h = 3 * scaleFactor, 4.5 * scaleFactor
 
-                local Size = HRP.Size.Y
-                local scaleFactor = (Size * Cam.ViewportSize.Y) / (Pos.Z * 2)
-                local w, h = 3 * scaleFactor, 4.5 * scaleFactor
+                    local targetTextSize = math.max(_Periphean.ESPConfig.MinFontSize, _Periphean.ESPConfig.FontSize * (1 - (Dist / _Periphean.ESPConfig.MaxDistance)))
+                    local smoothTextSize = Functions:Lerp(Name.TextSize, targetTextSize, 0.1)
 
-                local targetTextSize = math.max(_Periphean.ESPConfig.MinFontSize, _Periphean.ESPConfig.FontSize * (1 - (Dist / maxDistance)))
-                local smoothTextSize = Functions:Lerp(Name.TextSize, targetTextSize, 0.1)
+                    Box.Position = UDim2.new(0, Pos.X - w / 2, 0, Pos.Y - h / 2)
+                    Box.Size = UDim2.new(0, w, 0, h)
+                    Box.Visible = _Periphean.ESPConfig.Drawing.Boxes.Full.Enabled
+                    Box.BackgroundColor3 = _Periphean.ESPConfig.Drawing.Boxes.Filled.RGB
+                    Box.BackgroundTransparency = _Periphean.ESPConfig.Drawing.Boxes.Filled.Transparency
 
-                Box.Position = UDim2.new(0, Pos.X - w / 2, 0, Pos.Y - h / 2)
-                Box.Size = UDim2.new(0, w, 0, h)
-                Box.Visible = boxesFullEnabled
-                Box.BackgroundColor3 = boxesFilledRGB
-                Box.BackgroundTransparency = boxesFilledTransparency
+                    local CornerPositions = {
+                        LeftTop = {Pos.X - w / 2, Pos.Y - h / 2, w / 5, 1},
+                        LeftSide = {Pos.X - w / 2, Pos.Y - h / 2, 1, h / 5},
+                        BottomSide = {Pos.X - w / 2, Pos.Y + h / 2, 1, h / 5, Vector2.new(0, 5)},
+                        BottomDown = {Pos.X - w / 2, Pos.Y + h / 2, w / 5, 1, Vector2.new(0, 1)},
+                        RightTop = {Pos.X + w / 2, Pos.Y - h / 2, w / 5, 1, Vector2.new(1, 0)},
+                        RightSide = {Pos.X + w / 2 - 1, Pos.Y - h / 2, 1, h / 5, Vector2.new(0, 0)},
+                        BottomRightSide = {Pos.X + w / 2, Pos.Y + h / 2, 1, h / 5, Vector2.new(1, 1)},
+                        BottomRightDown = {Pos.X + w / 2, Pos.Y + h / 2, w / 5, 1, Vector2.new(1, 1)}
+                    }
 
-                local CornerPositions = {
-                    LeftTop = {Pos.X - w / 2, Pos.Y - h / 2, w / 5, 1},
-                    LeftSide = {Pos.X - w / 2, Pos.Y - h / 2, 1, h / 5},
-                    BottomSide = {Pos.X - w / 2, Pos.Y + h / 2, 1, h / 5, Vector2.new(0, 5)},
-                    BottomDown = {Pos.X - w / 2, Pos.Y + h / 2, w / 5, 1, Vector2.new(0, 1)},
-                    RightTop = {Pos.X + w / 2, Pos.Y - h / 2, w / 5, 1, Vector2.new(1, 0)},
-                    RightSide = {Pos.X + w / 2 - 1, Pos.Y - h / 2, 1, h / 5, Vector2.new(0, 0)},
-                    BottomRightSide = {Pos.X + w / 2, Pos.Y + h / 2, 1, h / 5, Vector2.new(1, 1)},
-                    BottomRightDown = {Pos.X + w / 2, Pos.Y + h / 2, w / 5, 1, Vector2.new(1, 1)}
-                }
-
-                for pos, data in pairs(CornerPositions) do
-                    local frame = CornerFrames[pos]
-                    frame.Visible = boxesCornerEnabled
-                    frame.Position = UDim2.new(0, data[1], 0, data[2])
-                    frame.Size = UDim2.new(0, data[3], 0, data[4])
-                    if data[5] then
-                        frame.AnchorPoint = data[5]
-                    end
-                end
-
-                local health, maxHealth
-                if gameId == 863266079 then
-                    local stats = plr:FindFirstChild("Stats")
-                    if stats then
-                        local healthValue = stats:FindFirstChild("Health")
-                        if healthValue then
-                            health = healthValue.Value
-                            maxHealth = 100
+                    for pos, data in pairs(CornerPositions) do
+                        local frame = CornerFrames[pos]
+                        frame.Visible = _Periphean.ESPConfig.Drawing.Boxes.Corner.Enabled
+                        frame.Position = UDim2.new(0, data[1], 0, data[2])
+                        frame.Size = UDim2.new(0, data[3], 0, data[4])
+                        if data[5] then
+                            frame.AnchorPoint = data[5]
                         end
                     end
-                else
-                    health = Humanoid.Health
-                    maxHealth = Humanoid.MaxHealth
-                end
 
-                health = health or 0
-                maxHealth = maxHealth or 100
-
-                Healthbar.Visible = healthbarEnabled
-                Healthbar.Position = UDim2.new(0, Pos.X - w / 2 - 6, 0, Pos.Y - h / 2 + h * (1 - health / maxHealth))  
-                Healthbar.Size = UDim2.new(0, healthbarWidth, 0, h * (health / maxHealth))
-                Healthbar.BackgroundColor3 = Color3.fromHSV((health / maxHealth) * 0.33, 1, 1)
-                BehindHealthbar.Visible = healthbarEnabled
-                BehindHealthbar.Position = UDim2.new(0, Pos.X - w / 2 - 6, 0, Pos.Y - h / 2)  
-                BehindHealthbar.Size = UDim2.new(0, healthbarWidth, 0, h)
-
-                if _Periphean.ESPConfig.Drawing.Healthbar.HealthText then
-                    local healthPercentage = math.floor((health / maxHealth) * 100)
-                    HealthText.Position = UDim2.new(0, Pos.X - w / 2 - 10, 0, Pos.Y - h / 2 + h / 2)
-                    HealthText.Text = tostring(healthPercentage) .. "%"
-                    HealthText.Visible = true
-                    HealthText.TextColor3 = Color3.fromHSV((health / maxHealth) * 0.33, 1, 1)
-                    HealthText.TextSize = smoothTextSize
-                end
-                
-                Name.Visible = namesEnabled
-                if Name.Visible then
-                    Name.Text = plr.Name
-                    Name.Position = UDim2.new(0, Pos.X, 0, Pos.Y - h / 2 - 9)
-                    Name.TextSize = smoothTextSize
-                end
-
-                if distancesEnabled then
-                    Distance.Position = UDim2.new(0, Pos.X, 0, Pos.Y + h / 2 + 7)
-                    Distance.Text = math.floor(Dist) .. " meters"
-                    Distance.Visible = true
-                    Distance.TextSize = smoothTextSize
-                end
-
-                if tracersEnabled then
-                    local head = character:FindFirstChild("Head")
-                    if head then
-                        local headBottomPos = head.Position - Vector3.new(0, head.Size.Y / 2, 0)
-                        local headScreenPos = Cam:WorldToViewportPoint(headBottomPos)
-                        local mousePos = UserInputService:GetMouseLocation()
-                        Tracer.From = Vector2.new(mousePos.X, mousePos.Y)
-                        Tracer.To = Vector2.new(headScreenPos.X, headScreenPos.Y)
-                        Tracer.Visible = health > 0
-                    end
-                end
-
-                if gameId == 863266079 and UserInputService:IsKeyDown(inventoryViewerKeyPicker) then
-                    local closestPlayer, closestDist = nil, math.huge
-                    for _, player in pairs(Players:GetPlayers()) do
-                        if player ~= lplayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                            local mousePos = UserInputService:GetMouseLocation()
-                            local playerPos = Cam:WorldToViewportPoint(player.Character.HumanoidRootPart.Position)
-                            local dist = (Vector2.new(playerPos.X, playerPos.Y) - mousePos).Magnitude
-                            if dist < closestDist then
-                                closestPlayer, closestDist = player, dist
-                            end
-                        end
-                    end
-                
-                    if closestPlayer and closestDist <= maxDistance then
-                        local stats = closestPlayer:FindFirstChild("Stats")
-                        local primary, secondary = "None", "None"
+                    local health, maxHealth
+                    if gameId == 863266079 then
+                        local stats = plr:FindFirstChild("Stats")
                         if stats then
-                            primary = stats:FindFirstChild("Primary") and stats.Primary.Value or "None"
-                            secondary = stats:FindFirstChild("Secondary") and stats.Secondary.Value or "None"
-                        end
-                
-                        local equipment = {}
-                        local equipmentFolder = closestPlayer.Character:FindFirstChild("Equipment")
-                        if equipmentFolder then
-                            for _, item in pairs(equipmentFolder:GetChildren()) do
-                                table.insert(equipment, item.Name)
+                            local healthValue = stats:FindFirstChild("Health")
+                            if healthValue then
+                                health = healthValue.Value
+                                maxHealth = 100
                             end
                         end
-                        local equipmentText = table.concat(equipment, "\n")
-                
-                        local health = stats:FindFirstChild("Health") and stats.Health.Value or 0
-                
-                        local characterState = "Idle"
-                        if closestPlayer.Character and closestPlayer.Character:FindFirstChild("Humanoid") then
-                            local humanoid = closestPlayer.Character.Humanoid
-                            if humanoid:GetState() == Enum.HumanoidStateType.Running then
-                                characterState = "Running"
-                            elseif humanoid:GetState() == Enum.HumanoidStateType.Seated then
-                                characterState = "Sitting"
-                            elseif humanoid:GetState() == Enum.HumanoidStateType.Jumping then
-                                characterState = "Jumping"
-                            elseif humanoid:GetState() == Enum.HumanoidStateType.Freefall then
-                                characterState = "Falling"
-                            elseif humanoid:GetState() == Enum.HumanoidStateType.Climbing then
-                                characterState = "Climbing"
-                            elseif humanoid:GetState() == Enum.HumanoidStateType.Swimming then
-                                characterState = "Swimming"
-                            elseif humanoid:GetState() == Enum.HumanoidStateType.Dead then
-                                characterState = "Dead"
+                    else
+                        health = Humanoid.Health
+                        maxHealth = Humanoid.MaxHealth
+                    end
+
+                    health = health or 0
+                    maxHealth = maxHealth or 100
+
+                    Healthbar.Visible = _Periphean.ESPConfig.Drawing.Healthbar.Enabled
+                    Healthbar.Position = UDim2.new(0, Pos.X - w / 2 - 6, 0, Pos.Y - h / 2 + h * (1 - health / maxHealth))  
+                    Healthbar.Size = UDim2.new(0, _Periphean.ESPConfig.Drawing.Healthbar.Width, 0, h * (health / maxHealth))
+                    Healthbar.BackgroundColor3 = Color3.fromHSV((health / maxHealth) * 0.33, 1, 1)
+                    BehindHealthbar.Visible = _Periphean.ESPConfig.Drawing.Healthbar.Enabled
+                    BehindHealthbar.Position = UDim2.new(0, Pos.X - w / 2 - 6, 0, Pos.Y - h / 2)  
+                    BehindHealthbar.Size = UDim2.new(0, _Periphean.ESPConfig.Drawing.Healthbar.Width, 0, h)
+
+                    if _Periphean.ESPConfig.Drawing.Healthbar.HealthText then
+                        local healthPercentage = math.floor((health / maxHealth) * 100)
+                        HealthText.Position = UDim2.new(0, Pos.X - w / 2 - 10, 0, Pos.Y - h / 2 + h / 2)
+                        HealthText.Text = tostring(healthPercentage) .. "%"
+                        HealthText.Visible = true
+                        HealthText.TextColor3 = Color3.fromHSV((health / maxHealth) * 0.33, 1, 1)
+                        HealthText.TextSize = smoothTextSize
+                    end
+                    
+                    Name.Visible = _Periphean.ESPConfig.Drawing.Names.Enabled
+                    if Name.Visible then
+                        Name.Text = plr.Name
+                        Name.Position = UDim2.new(0, Pos.X, 0, Pos.Y - h / 2 - 9)
+                        Name.TextSize = smoothTextSize
+                    end
+
+                    if _Periphean.ESPConfig.Drawing.Distances.Enabled then
+                        Distance.Position = UDim2.new(0, Pos.X, 0, Pos.Y + h / 2 + 7)
+                        Distance.Text = math.floor(Dist) .. " meters"
+                        Distance.Visible = true
+                        Distance.TextSize = smoothTextSize
+                    end
+
+                    if _Periphean.ESPConfig.Drawing.Tracers.Enabled then
+                        local head = plr.Character:FindFirstChild("Head")
+                        if head then
+                            local headBottomPos = head.Position - Vector3.new(0, head.Size.Y / 2, 0)
+                            local headScreenPos = Cam:WorldToViewportPoint(headBottomPos)
+                            local mousePos = UserInputService:GetMouseLocation()
+                            Tracer.From = Vector2.new(mousePos.X, mousePos.Y)
+                            Tracer.To = Vector2.new(headScreenPos.X, headScreenPos.Y)
+                            Tracer.Visible = health > 0
+                        end
+                    end
+
+                    if gameId == 863266079 and UserInputService:IsKeyDown(_Periphean.ESPConfig.Drawing.InventoryViewer.KeyPicker) then
+                        local closestPlayer, closestDist = nil, math.huge
+                        for _, player in pairs(Players:GetPlayers()) do
+                            if player ~= lplayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                                local mousePos = UserInputService:GetMouseLocation()
+                                local playerPos = Cam:WorldToViewportPoint(player.Character.HumanoidRootPart.Position)
+                                local dist = (Vector2.new(playerPos.X, playerPos.Y) - mousePos).Magnitude
+                                if dist < closestDist then
+                                    closestPlayer, closestDist = player, dist
+                                end
                             end
                         end
-                
-                        local newInventoryText = string.format(
-                            "%s's information:\n\nWeapons:\nPrimary: %s\nSecondary: %s\n\nEquipment:\n%s\n\nInfo:\nHP: %d%%\nCharacter State: %s",
-                            closestPlayer.Name, primary, secondary, equipmentText, health, characterState
-                        )
-                
-                        if newInventoryText ~= previousInventoryText then
-                            InventoryViewer.Text = newInventoryText
-                            previousInventoryText = newInventoryText
+                    
+                        if closestPlayer and closestDist <= _Periphean.ESPConfig.MaxDistance then
+                            local stats = closestPlayer:FindFirstChild("Stats")
+                            local primary, secondary = "None", "None"
+                            if stats then
+                                primary = stats:FindFirstChild("Primary") and stats.Primary.Value or "None"
+                                secondary = stats:FindFirstChild("Secondary") and stats.Secondary.Value or "None"
+                            end
+                    
+                            local equipment = {}
+                            local equipmentFolder = closestPlayer.Character:FindFirstChild("Equipment")
+                            if equipmentFolder then
+                                for _, item in pairs(equipmentFolder:GetChildren()) do
+                                    table.insert(equipment, item.Name)
+                                end
+                            end
+                            local equipmentText = table.concat(equipment, "\n")
+                    
+                            local health = stats:FindFirstChild("Health") and stats.Health.Value or 0
+                    
+                            local characterState = "Idle"
+                            if closestPlayer.Character and closestPlayer.Character:FindFirstChild("Humanoid") then
+                                local humanoid = closestPlayer.Character.Humanoid
+                                if humanoid:GetState() == Enum.HumanoidStateType.Running then
+                                    characterState = "Running"
+                                elseif humanoid:GetState() == Enum.HumanoidStateType.Seated then
+                                    characterState = "Sitting"
+                                elseif humanoid:GetState() == Enum.HumanoidStateType.Jumping then
+                                    characterState = "Jumping"
+                                elseif humanoid:GetState() == Enum.HumanoidStateType.Freefall then
+                                    characterState = "Falling"
+                                elseif humanoid:GetState() == Enum.HumanoidStateType.Climbing then
+                                    characterState = "Climbing"
+                                elseif humanoid:GetState() == Enum.HumanoidStateType.Swimming then
+                                    characterState = "Swimming"
+                                elseif humanoid:GetState() == Enum.HumanoidStateType.Dead then
+                                    characterState = "Dead"
+                                end
+                            end
+                    
+                            local newInventoryText = string.format(
+                                "%s's information:\n\nWeapons:\nPrimary: %s\nSecondary: %s\n\nEquipment:\n%s\n\nInfo:\nHP: %d%%\nCharacter State: %s",
+                                closestPlayer.Name, primary, secondary, equipmentText, health, characterState
+                            )
+                    
+                            if newInventoryText ~= previousInventoryText then
+                                InventoryViewer.Text = newInventoryText
+                                previousInventoryText = newInventoryText
+                            end
+                            InventoryViewer.Visible = true
+                        else
+                            InventoryViewer.Visible = false
                         end
-                        InventoryViewer.Visible = true
                     else
                         InventoryViewer.Visible = false
                     end
                 else
-                    InventoryViewer.Visible = false
+                    HideESP()
                 end
             else
                 HideESP()
