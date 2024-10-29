@@ -114,8 +114,8 @@ do
         })
         local Box = CreateESPElement("Frame", {
             Parent = ScreenGui,
-            BackgroundColor3 = Color3.fromRGB(0, 0, 0),
-            BackgroundTransparency = 0.75,
+            BackgroundColor3 = _Periphean.ESPConfig.Drawing.Boxes.Filled.RGB,
+            BackgroundTransparency = _Periphean.ESPConfig.Drawing.Boxes.Filled.Transparency,
             BorderSizePixel = 0
         })
         local Healthbar = CreateESPElement("Frame", {
@@ -269,6 +269,7 @@ do
                         Name.Text = plr.Name
                         Name.Position = UDim2.new(0, Pos.X, 0, Pos.Y - h / 2 - 9)
                         Name.TextSize = smoothTextSize
+                        Name.TextColor3 = _Periphean.ESPConfig.Drawing.Names.RGB
                     end
 
                     if _Periphean.ESPConfig.Drawing.Distances.Enabled then
@@ -276,6 +277,7 @@ do
                         Distance.Text = math.floor(Dist) .. " meters"
                         Distance.Visible = true
                         Distance.TextSize = smoothTextSize
+                        Distance.TextColor3 = _Periphean.ESPConfig.Drawing.Distances.RGB
                     end
 
                     if _Periphean.ESPConfig.Drawing.Tracers.Enabled then
@@ -287,6 +289,7 @@ do
                             Tracer.From = Vector2.new(mousePos.X, mousePos.Y)
                             Tracer.To = Vector2.new(headScreenPos.X, headScreenPos.Y)
                             Tracer.Visible = health > 0
+                            Tracer.Color = _Periphean.ESPConfig.Drawing.Tracers.RGB
                         end
                     end
 
