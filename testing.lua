@@ -57,7 +57,6 @@ _Periphean.ESPConfig = _Periphean.ESPConfig or {
     },
 }
 
-local ESP = _Periphean.ESPConfig
 local lplayer = Players.LocalPlayer
 local Cam = Workspace.CurrentCamera
 
@@ -95,7 +94,7 @@ do
             BackgroundTransparency = 1,
             TextColor3 = Color3.fromRGB(255, 255, 255),
             Font = Enum.Font.Code,
-            TextSize = ESP.FontSize,
+            TextSize = _Periphean.ESPConfig.FontSize,
             TextStrokeTransparency = 0,
             TextStrokeColor3 = Color3.fromRGB(0, 0, 0),
             RichText = true
@@ -108,7 +107,7 @@ do
             BackgroundTransparency = 1,
             TextColor3 = Color3.fromRGB(255, 255, 255),
             Font = Enum.Font.Code,
-            TextSize = ESP.FontSize,
+            TextSize = _Periphean.ESPConfig.FontSize,
             TextStrokeTransparency = 0,
             TextStrokeColor3 = Color3.fromRGB(0, 0, 0),
             RichText = true
@@ -137,13 +136,13 @@ do
             BackgroundTransparency = 1,
             TextColor3 = Color3.fromRGB(255, 255, 255),
             Font = Enum.Font.Code,
-            TextSize = ESP.FontSize,
+            TextSize = _Periphean.ESPConfig.FontSize,
             TextStrokeTransparency = 0,
             TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
         })
         local Tracer = Drawing.new("Line")
-        Tracer.Color = ESP.Drawing.Tracers.RGB
-        Tracer.Thickness = ESP.Drawing.Tracers.Thickness
+        Tracer.Color = _Periphean.ESPConfig.Drawing.Tracers.RGB
+        Tracer.Thickness = _Periphean.ESPConfig.Drawing.Tracers.Thickness
         Tracer.Transparency = 1
 
         local InventoryViewer = CreateESPElement("TextLabel", {
@@ -153,7 +152,7 @@ do
             BackgroundTransparency = 1,
             TextColor3 = Color3.fromRGB(255, 255, 255),
             Font = Enum.Font.Code,
-            TextSize = ESP.FontSize,
+            TextSize = _Periphean.ESPConfig.FontSize,
             TextStrokeTransparency = 0,
             TextStrokeColor3 = Color3.fromRGB(0, 0, 0),
             RichText = true,
@@ -164,7 +163,7 @@ do
         for _, pos in ipairs({"LeftTop", "LeftSide", "RightTop", "RightSide", "BottomSide", "BottomDown", "BottomRightSide", "BottomRightDown"}) do
             CornerFrames[pos] = CreateESPElement("Frame", {
                 Parent = ScreenGui,
-                BackgroundColor3 = ESP.Drawing.Boxes.Corner.RGB,
+                BackgroundColor3 = _Periphean.ESPConfig.Drawing.Boxes.Corner.RGB,
                 Position = UDim2.new(0, 0, 0, 0)
             })
         end
@@ -190,24 +189,24 @@ do
 
         local previousInventoryText = ""
 
-        local maxDistance = ESP.MaxDistance
-        local namesEnabled = ESP.Drawing.Names.Enabled
-        local namesRGB = ESP.Drawing.Names.RGB
-        local distancesEnabled = ESP.Drawing.Distances.Enabled
-        local distancesRGB = ESP.Drawing.Distances.RGB
-        local healthbarEnabled = ESP.Drawing.Healthbar.Enabled
-        local healthbarWidth = ESP.Drawing.Healthbar.Width
-        local boxesFullEnabled = ESP.Drawing.Boxes.Full.Enabled
-        local boxesFilledRGB = ESP.Drawing.Boxes.Filled.RGB
-        local boxesFilledTransparency = ESP.Drawing.Boxes.Filled.Transparency
-        local boxesCornerEnabled = ESP.Drawing.Boxes.Corner.Enabled
-        local tracersEnabled = ESP.Drawing.Tracers.Enabled
-        local tracersRGB = ESP.Drawing.Tracers.RGB
-        local tracersThickness = ESP.Drawing.Tracers.Thickness
-        local inventoryViewerEnabled = ESP.Drawing.InventoryViewer.Enabled
-        local inventoryViewerKeyPicker = ESP.Drawing.InventoryViewer.KeyPicker
+        local maxDistance = _Periphean.ESPConfig.MaxDistance
+        local namesEnabled = _Periphean.ESPConfig.Drawing.Names.Enabled
+        local namesRGB = _Periphean.ESPConfig.Drawing.Names.RGB
+        local distancesEnabled = _Periphean.ESPConfig.Drawing.Distances.Enabled
+        local distancesRGB = _Periphean.ESPConfig.Drawing.Distances.RGB
+        local healthbarEnabled = _Periphean.ESPConfig.Drawing.Healthbar.Enabled
+        local healthbarWidth = _Periphean.ESPConfig.Drawing.Healthbar.Width
+        local boxesFullEnabled = _Periphean.ESPConfig.Drawing.Boxes.Full.Enabled
+        local boxesFilledRGB = _Periphean.ESPConfig.Drawing.Boxes.Filled.RGB
+        local boxesFilledTransparency = _Periphean.ESPConfig.Drawing.Boxes.Filled.Transparency
+        local boxesCornerEnabled = _Periphean.ESPConfig.Drawing.Boxes.Corner.Enabled
+        local tracersEnabled = _Periphean.ESPConfig.Drawing.Tracers.Enabled
+        local tracersRGB = _Periphean.ESPConfig.Drawing.Tracers.RGB
+        local tracersThickness = _Periphean.ESPConfig.Drawing.Tracers.Thickness
+        local inventoryViewerEnabled = _Periphean.ESPConfig.Drawing.InventoryViewer.Enabled
+        local inventoryViewerKeyPicker = _Periphean.ESPConfig.Drawing.InventoryViewer.KeyPicker
 
-        Connection = ESP.Connections.RunService.RenderStepped:Connect(function()
+        Connection = _Periphean.ESPConfig.Connections.RunService.RenderStepped:Connect(function()
             local character = plr.Character
             if character and character:FindFirstChild("HumanoidRootPart") then
                 local HRP = character.HumanoidRootPart
@@ -224,7 +223,7 @@ do
                 local scaleFactor = (Size * Cam.ViewportSize.Y) / (Pos.Z * 2)
                 local w, h = 3 * scaleFactor, 4.5 * scaleFactor
 
-                local targetTextSize = math.max(ESP.MinFontSize, ESP.FontSize * (1 - (Dist / maxDistance)))
+                local targetTextSize = math.max(_Periphean.ESPConfig.MinFontSize, _Periphean.ESPConfig.FontSize * (1 - (Dist / maxDistance)))
                 local smoothTextSize = Functions:Lerp(Name.TextSize, targetTextSize, 0.1)
 
                 Box.Position = UDim2.new(0, Pos.X - w / 2, 0, Pos.Y - h / 2)
@@ -280,7 +279,7 @@ do
                 BehindHealthbar.Position = UDim2.new(0, Pos.X - w / 2 - 6, 0, Pos.Y - h / 2)  
                 BehindHealthbar.Size = UDim2.new(0, healthbarWidth, 0, h)
 
-                if ESP.Drawing.Healthbar.HealthText then
+                if _Periphean.ESPConfig.Drawing.Healthbar.HealthText then
                     local healthPercentage = math.floor((health / maxHealth) * 100)
                     HealthText.Position = UDim2.new(0, Pos.X - w / 2 - 10, 0, Pos.Y - h / 2 + h / 2)
                     HealthText.Text = tostring(healthPercentage) .. "%"
@@ -346,7 +345,6 @@ do
                         local equipmentText = table.concat(equipment, "\n")
                 
                         local health = stats:FindFirstChild("Health") and stats.Health.Value or 0
-                        local hpBoost = health > 100 and "Yes" or "No"
                 
                         local characterState = "Idle"
                         if closestPlayer.Character and closestPlayer.Character:FindFirstChild("Humanoid") then
@@ -369,10 +367,10 @@ do
                         end
                 
                         local newInventoryText = string.format(
-                            "%s's information:\n\nWeapons:\nPrimary: %s\nSecondary: %s\n\nEquipment:\n%s\n\nInfo:\nHP: %d%%\nHP Boost: %s\nCharacter State: %s",
-                            closestPlayer.Name, primary, secondary, equipmentText, health, hpBoost, characterState
+                            "%s's information:\n\nWeapons:\nPrimary: %s\nSecondary: %s\n\nEquipment:\n%s\n\nInfo:\nHP: %d%%\nCharacter State: %s",
+                            closestPlayer.Name, primary, secondary, equipmentText, health, characterState
                         )
-
+                
                         if newInventoryText ~= previousInventoryText then
                             InventoryViewer.Text = newInventoryText
                             previousInventoryText = newInventoryText
