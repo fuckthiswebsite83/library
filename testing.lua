@@ -1,7 +1,7 @@
 local Workspace = cloneref(game:GetService("Workspace"))
 local RunService = cloneref(game:GetService("RunService"))
 local Players = cloneref(game:GetService("Players"))
-local CoreGui = game:GetService("CoreGui")
+local CoreGui = game:GetService("CoreGui"))
 local Lighting = cloneref(game:GetService("Lighting"))
 local UserInputService = game:GetService("UserInputService"))
 local gameId = game.PlaceId
@@ -92,7 +92,7 @@ do
             Size = UDim2.new(0, 100, 0, 20),
             AnchorPoint = Vector2.new(0.5, 0.5),
             BackgroundTransparency = 1,
-            TextColor3 = _Periphean.ESPConfig.Drawing.Names.RGB,
+            TextColor3 = Color3.fromRGB(255, 255, 255),
             Font = Enum.Font.Code,
             TextSize = _Periphean.ESPConfig.FontSize,
             TextStrokeTransparency = 0,
@@ -105,7 +105,7 @@ do
             Size = UDim2.new(0, 100, 0, 20),
             AnchorPoint = Vector2.new(0.5, 0.5),
             BackgroundTransparency = 1,
-            TextColor3 = _Periphean.ESPConfig.Drawing.Distances.RGB,
+            TextColor3 = Color3.fromRGB(255, 255, 255),
             Font = Enum.Font.Code,
             TextSize = _Periphean.ESPConfig.FontSize,
             TextStrokeTransparency = 0,
@@ -114,8 +114,8 @@ do
         })
         local Box = CreateESPElement("Frame", {
             Parent = ScreenGui,
-            BackgroundColor3 = _Periphean.ESPConfig.Drawing.Boxes.Filled.RGB,
-            BackgroundTransparency = _Periphean.ESPConfig.Drawing.Boxes.Filled.Transparency,
+            BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+            BackgroundTransparency = 0.75,
             BorderSizePixel = 0
         })
         local Healthbar = CreateESPElement("Frame", {
@@ -269,7 +269,6 @@ do
                         Name.Text = plr.Name
                         Name.Position = UDim2.new(0, Pos.X, 0, Pos.Y - h / 2 - 9)
                         Name.TextSize = smoothTextSize
-                        Name.TextColor3 = _Periphean.ESPConfig.Drawing.Names.RGB
                     end
 
                     if _Periphean.ESPConfig.Drawing.Distances.Enabled then
@@ -277,7 +276,6 @@ do
                         Distance.Text = math.floor(Dist) .. " meters"
                         Distance.Visible = true
                         Distance.TextSize = smoothTextSize
-                        Distance.TextColor3 = _Periphean.ESPConfig.Drawing.Distances.RGB
                     end
 
                     if _Periphean.ESPConfig.Drawing.Tracers.Enabled then
@@ -289,8 +287,6 @@ do
                             Tracer.From = Vector2.new(mousePos.X, mousePos.Y)
                             Tracer.To = Vector2.new(headScreenPos.X, headScreenPos.Y)
                             Tracer.Visible = health > 0
-                            Tracer.Color = _Periphean.ESPConfig.Drawing.Tracers.RGB
-                            Tracer.Thickness = _Periphean.ESPConfig.Drawing.Tracers.Thickness
                         end
                     end
 
